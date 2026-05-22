@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Letras Gaby</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Agenda e inventario</p>
+        <h1>Letras Gaby</h1>
+      </div>
+      <div class="date-chip" id="todayLabel"></div>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel planner-panel" aria-labelledby="newOrderTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Nuevo pedido</p>
+            <h2 id="newOrderTitle">Reserva</h2>
+          </div>
+          <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
+        </div>
+
+        <form id="orderForm" class="order-form">
+          <label>
+            Cliente
+            <input id="clientName" type="text" placeholder="Nombre o evento" required />
+          </label>
+
+          <label>
+            Fecha del evento
+            <input id="eventDate" type="date" required />
+          </label>
+
+          <div class="form-grid">
+            <label>
+              Retira
+              <input id="pickupDate" type="date" required />
+            </label>
+            <label>
+              Turno
+              <select id="pickupSlot">
+                <option value="morning">Mañana</option>
+                <option value="afternoon">Tarde</option>
+                <option value="night">Noche</option>
+              </select>
+            </label>
+            <label>
+              Devuelve
+              <input id="returnDate" type="date" required />
+            </label>
+            <label>
+              Turno
+              <select id="returnSlot">
+                <option value="morning">Mañana</option>
+                <option value="afternoon">Tarde</option>
+                <option value="night">Noche</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Letras
+            <div class="letter-entry">
+              <select id="letterSelect"></select>
+              <input id="letterQuantity" type="number" min="1" value="1" />
+              <button id="addLetterButton" class="icon-button" type="button" title="Agregar letra">+</button>
+            </div>
+          </label>
+
+          <div id="selectedLetters" class="selected-letters"></div>
+
+          <label>
+            Nota
+            <textarea id="orderNote" rows="3" placeholder="Color, seña, dirección, detalle especial"></textarea>
+          </label>
+
+          <div id="availabilityAlert" class="availability-alert neutral">
+            Elegí fechas y letras para revisar la disponibilidad.
+          </div>
+
+          <button class="primary-button" type="submit">Guardar pedido</button>
+        </form>
+      </section>
+
+      <section class="panel report-panel" aria-labelledby="reportTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Vista rápida</p>
+            <h2 id="reportTitle">Reporte diario</h2>
+          </div>
+          <label class="compact-label">
+            Día
+            <input id="reportDate" type="date" />
+          </label>
+        </div>
+
+        <div class="metric-row">
+          <article>
+            <span id="eventsCount">0</span>
+            <p>eventos</p>
+          </article>
+          <article>
+            <span id="pickupCount">0</span>
+            <p>retiros</p>
+          </article>
+          <article>
+            <span id="returnCount">0</span>
+            <p>devoluciones</p>
+          </article>
+        </div>
+
+        <div class="report-list" id="dailyReport"></div>
+
+        <div class="message-box">
+          <div class="panel-heading small-heading">
+            <h3>Mensaje para enviar</h3>
+            <button class="ghost-button" id="copyMessageButton" type="button">Copiar</button>
+          </div>
+          <textarea id="messageDraft" rows="7" readonly></textarea>
+        </div>
+      </section>
+
+      <section class="panel inventory-panel" aria-labelledby="inventoryTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Stock</p>
+            <h2 id="inventoryTitle">Inventario</h2>
+          </div>
+          <button class="ghost-button" id="resetDemoButton" type="button">Reiniciar demo</button>
+        </div>
+        <form id="inventoryForm" class="inventory-form">
+          <input id="inventoryLetter" type="text" maxlength="3" placeholder="Letra" required />
+          <input id="inventoryQuantity" type="number" min="0" value="1" required />
+          <button class="icon-button" type="submit" title="Guardar stock">+</button>
+        </form>
+        <div id="inventoryGrid" class="inventory-grid"></div>
+      </section>
+
+      <section class="panel orders-panel" aria-labelledby="ordersTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Agenda</p>
+            <h2 id="ordersTitle">Pedidos cargados</h2>
+          </div>
+          <select id="statusFilter">
+            <option value="active">Activos</option>
+            <option value="all">Todos</option>
+            <option value="completed">Finalizados</option>
+          </select>
+        </div>
+        <div id="ordersList" class="orders-list"></div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
