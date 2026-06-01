@@ -4,31 +4,32 @@ const slotLabels = { morning: "mañana", afternoon: "tarde", night: "noche" };
 const slotOrder = { morning: 0, afternoon: 1, night: 2 };
 
 const defaultInventory = {
-  A: { stock: 5, price: 1200 },
-  B: { stock: 3, price: 1200 },
-  C: { stock: 2, price: 1200 },
-  G: { stock: 2, price: 1200 },
-  I: { stock: 4, price: 1200 },
-  L: { stock: 4, price: 1200 },
-  M: { stock: 3, price: 1200 },
-  O: { stock: 5, price: 1200 },
-  R: { stock: 3, price: 1200 },
-  S: { stock: 3, price: 1200 },
-  Y: { stock: 1, price: 1200 },
-  "★": { stock: 2, price: 1500 },
-  "✝": { stock: 1, price: 1500 },
-  "♥": { stock: 2, price: 1500 },
-  "*": { stock: 2, price: 1500 },
-  "&": { stock: 1, price: 1500 },
+  A: { stock: 5 },
+  B: { stock: 3 },
+  C: { stock: 2 },
+  G: { stock: 2 },
+  I: { stock: 4 },
+  L: { stock: 4 },
+  M: { stock: 3 },
+  O: { stock: 5 },
+  R: { stock: 3 },
+  S: { stock: 3 },
+  Y: { stock: 1 },
+  "★": { stock: 2 },
+  "✝": { stock: 1 },
+  "♥": { stock: 2 },
+  "*": { stock: 2 },
+  "&": { stock: 1 },
 };
 
 const demoState = {
   inventory: structuredClone(defaultInventory),
+  settings: { letterUnitPrice: 10000 },
   decorators: ["Particular", "Decoradora Ana", "Eventos Sol"],
   orders: [
-    makeDemoOrder("Josefina", "Decoradora Ana", "2026-06-05", "2026-06-04", "afternoon", "2026-06-06", "morning", "AMBAR", 6500, 3000, "Mamá de Josefina", "Pedido AMBAR."),
-    makeDemoOrder("Roberto", "Particular", "2026-06-05", "2026-06-05", "morning", "2026-06-06", "afternoon", "RYA", 3600, 3600, "Roberto", "Pedido RYA."),
-    makeDemoOrder("Cumple Alma", "Eventos Sol", "2026-06-06", "2026-06-06", "night", "2026-06-07", "afternoon", "ALMA", 4800, 1500, "Tía Laura", "Sale sábado a la noche."),
+    makeDemoOrder("Josefina", "Decoradora Ana", "2026-06-05", "2026-06-04", "afternoon", "2026-06-06", "morning", "AMBAR", 50000, 30000, "Mamá de Josefina", "Pedido AMBAR."),
+    makeDemoOrder("Roberto", "Particular", "2026-06-05", "2026-06-05", "morning", "2026-06-06", "afternoon", "RYA", 30000, 30000, "Roberto", "Pedido RYA."),
+    makeDemoOrder("Cumple Alma", "Eventos Sol", "2026-06-06", "2026-06-06", "night", "2026-06-07", "afternoon", "ALMA", 40000, 15000, "Tía Laura", "Sale sábado a la noche."),
   ],
 };
 
@@ -98,7 +99,7 @@ function bindEvents() {
   document.querySelectorAll("[data-special-char]").forEach((button) => {
     button.addEventListener("click", () => {
       textParts.push(button.dataset.specialChar);
-      syncText();
+      syncText(true);
     });
   });
   document.querySelectorAll("[data-report-view]").forEach((card) => {
@@ -164,22 +165,18 @@ function loadState() {
 function normalizeState(raw) {
   const inventory = { ...structuredClone(defaultInventory) };
   Object.entries(raw.inventory || {}).forEach(([letter, value]) => {
-    inventory[letter] =
-      typeof value === "number"
-        ? { stock: value, price: defaultInventory[letter]?.price || 1200 }
-        : { stock: Number(value.stock) || 0, price: Number(value.price) || defaultInventory[letter]?.price || 1200 };
+    inventory[letter] = typeof value === "number" ? { stock: value } : { stock: Number(value.stock) || 0 };
   });
-
+  const settings = { letterUnitPrice: Number(raw.settings?.letterUnitPrice) || 10000 };
   const decorators = raw.decorators?.length ? raw.decorators : ["Particular"];
   const orders = (raw.orders || []).map((order) => ({
     ...order,
     decorator: order.decorator || "Particular",
     pickupPerson: order.pickupPerson || "",
-    totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), inventory),
+    totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), settings),
     depositAmount: Number(order.depositAmount) || 0,
   }));
-
-  return { inventory, decorators, orders };
+  return { inventory, settings, decorators, orders };
 }
 
 function persist() {
@@ -196,9 +193,7 @@ function renderAll() {
 }
 
 function renderDecorators() {
-  els.decoratorSelect.innerHTML = state.decorators
-    .map((decorator) => `<option value="${escapeHtml(decorator)}">${escapeHtml(decorator)}</option>`)
-    .join("");
+  els.decoratorSelect.innerHTML = state.decorators.map((decorator) => `<option value="${escapeHtml(decorator)}">${escapeHtml(decorator)}</option>`).join("");
 }
 
 function addTextLine() {
@@ -206,12 +201,12 @@ function addTextLine() {
   if (!value) return;
   textParts.push(value);
   els.orderLineInput.value = "";
-  syncText();
+  syncText(true);
 }
 
-function syncText() {
+function syncText(updateTotal = false) {
   draftLetters = countLetters(textParts.join(""));
-  if (!els.totalAmount.value) els.totalAmount.value = estimatePrice(draftLetters, state.inventory);
+  if (updateTotal || !els.totalAmount.value) els.totalAmount.value = estimatePrice(draftLetters);
   renderText();
   renderPaymentPreview();
   renderAvailability();
@@ -220,21 +215,15 @@ function syncText() {
 function renderText() {
   const word = textParts.join("");
   els.orderPreview.innerHTML = word
-    ? `<strong>${escapeHtml(word)}</strong><p>${lettersText(draftLetters)}</p><div class="text-parts">${textParts
-        .map((part, index) => `<span>${escapeHtml(part)} <button type="button" data-remove-part="${index}">x</button></span>`)
-        .join("")}</div>`
+    ? `<strong>${escapeHtml(word)}</strong><p>${lettersText(draftLetters)}</p><div class="text-parts">${textParts.map((part, index) => `<span>${escapeHtml(part)} <button type="button" data-remove-part="${index}">x</button></span>`).join("")}</div>`
     : `<strong>Texto</strong><p>Escribí el texto para armar la reserva.</p>`;
 
-  els.selectedLetters.innerHTML = Object.entries(draftLetters)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([letter, quantity]) => `<span class="letter-pill">${escapeHtml(letter)}x${quantity}<button type="button" data-remove-letter="${escapeHtml(letter)}">x</button></span>`)
-    .join("");
+  els.selectedLetters.innerHTML = Object.entries(draftLetters).sort(([a], [b]) => a.localeCompare(b)).map(([letter, quantity]) => `<span class="letter-pill">${escapeHtml(letter)}x${quantity}<button type="button" data-remove-letter="${escapeHtml(letter)}">x</button></span>`).join("");
 
   els.orderPreview.querySelectorAll("[data-remove-part]").forEach((button) => {
     button.addEventListener("click", () => {
       textParts.splice(Number(button.dataset.removePart), 1);
-      els.totalAmount.value = estimatePrice(countLetters(textParts.join("")), state.inventory);
-      syncText();
+      syncText(true);
     });
   });
   els.selectedLetters.querySelectorAll("[data-remove-letter]").forEach((button) => {
@@ -248,18 +237,14 @@ function removeOneLetter(letter) {
   const chars = [...textParts[partIndex]];
   chars.splice(chars.indexOf(letter), 1);
   chars.length ? (textParts[partIndex] = chars.join("")) : textParts.splice(partIndex, 1);
-  els.totalAmount.value = estimatePrice(countLetters(textParts.join("")), state.inventory);
-  syncText();
+  syncText(true);
 }
 
 function saveOrder(event) {
   event.preventDefault();
   if (els.orderLineInput.value.trim()) addTextLine();
   const validation = validateDraft();
-  if (!validation.ok) {
-    showAvailability(validation.message, "bad");
-    return;
-  }
+  if (!validation.ok) return showAvailability(validation.message, "bad");
   const order = {
     id: crypto.randomUUID(),
     client: els.clientName.value.trim(),
@@ -288,22 +273,15 @@ function saveOrder(event) {
 
 function validateDraft() {
   if (!Object.keys(draftLetters).length) return { ok: false, message: "Escribí al menos una letra." };
-  if (stamp(els.pickupDate.value, els.pickupSlot.value) > stamp(els.returnDate.value, els.returnSlot.value)) {
-    return { ok: false, message: "La devolución tiene que ser posterior al retiro." };
-  }
-  const conflicts = Object.entries(draftLetters)
-    .map(([letter, requested]) => {
-      const overlapping = state.orders.filter((order) => order.status === "active" && rangesOverlap(order));
-      const used = overlapping.reduce((total, order) => total + (order.letters[letter] || 0), 0);
-      const available = (state.inventory[letter]?.stock || 0) - used;
-      return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map((order) => order.client) };
-    })
-    .filter((item) => item.requested > item.available);
+  if (stamp(els.pickupDate.value, els.pickupSlot.value) > stamp(els.returnDate.value, els.returnSlot.value)) return { ok: false, message: "La devolución tiene que ser posterior al retiro." };
+  const conflicts = Object.entries(draftLetters).map(([letter, requested]) => {
+    const overlapping = state.orders.filter((order) => order.status === "active" && rangesOverlap(order));
+    const used = overlapping.reduce((total, order) => total + (order.letters[letter] || 0), 0);
+    const available = (state.inventory[letter]?.stock || 0) - used;
+    return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map((order) => order.client) };
+  }).filter((item) => item.requested > item.available);
   if (!conflicts.length) return { ok: true };
-  return {
-    ok: false,
-    message: conflicts.map((item) => `${item.letter}: pedís ${item.requested}, hay ${item.available}. Choca con ${item.orders.join(", ")}.`).join(" "),
-  };
+  return { ok: false, message: conflicts.map((item) => `${item.letter}: pedís ${item.requested}, hay ${item.available}. Choca con ${item.orders.join(", ")}.`).join(" ") };
 }
 
 function rangesOverlap(order) {
@@ -458,8 +436,9 @@ function normalizeText(text) {
   return text.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
 }
 
-function estimatePrice(letters, inventory = state.inventory) {
-  return Object.entries(letters).reduce((total, [letter, quantity]) => total + quantity * (inventory[letter]?.price || 0), 0);
+function estimatePrice(letters, settings = state.settings) {
+  const quantity = Object.values(letters).reduce((total, amount) => total + amount, 0);
+  return quantity * (settings?.letterUnitPrice || 0);
 }
 
 function lettersText(letters) {
