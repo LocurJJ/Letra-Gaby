@@ -1,13 +1,34 @@
-const STORAGE_KEY = "letras-gaby-v2";
+const STORAGE_KEY = "letras-gaby-v3";
+const LEGACY_KEYS = ["letras-gaby-v2", "letras-gaby-v1"];
 const slotLabels = { morning: "mañana", afternoon: "tarde", night: "noche" };
 const slotOrder = { morning: 0, afternoon: 1, night: 2 };
 
+const defaultInventory = {
+  A: { stock: 5, price: 1200 },
+  B: { stock: 3, price: 1200 },
+  C: { stock: 2, price: 1200 },
+  G: { stock: 2, price: 1200 },
+  I: { stock: 4, price: 1200 },
+  L: { stock: 4, price: 1200 },
+  M: { stock: 3, price: 1200 },
+  O: { stock: 5, price: 1200 },
+  R: { stock: 3, price: 1200 },
+  S: { stock: 3, price: 1200 },
+  Y: { stock: 1, price: 1200 },
+  "★": { stock: 2, price: 1500 },
+  "✝": { stock: 1, price: 1500 },
+  "♥": { stock: 2, price: 1500 },
+  "*": { stock: 2, price: 1500 },
+  "&": { stock: 1, price: 1500 },
+};
+
 const demoState = {
-  inventory: { A: 5, B: 3, C: 2, G: 2, I: 4, L: 4, M: 3, O: 5, R: 3, S: 3, Y: 1, "★": 2, "✝": 1, "♥": 2, "*": 2, "&": 1 },
+  inventory: structuredClone(defaultInventory),
+  decorators: ["Particular", "Decoradora Ana", "Eventos Sol"],
   orders: [
-    makeDemoOrder("Josefina", "2026-06-05", "2026-06-04", "afternoon", "2026-06-06", "morning", "AMBAR", "Pedido AMBAR."),
-    makeDemoOrder("Roberto", "2026-06-05", "2026-06-05", "morning", "2026-06-06", "afternoon", "RYA", "Pedido RYA."),
-    makeDemoOrder("Cumple Alma", "2026-06-06", "2026-06-06", "night", "2026-06-07", "afternoon", "ALMA", "Sale sábado a la noche."),
+    makeDemoOrder("Josefina", "Decoradora Ana", "2026-06-05", "2026-06-04", "afternoon", "2026-06-06", "morning", "AMBAR", 6500, 3000, "Mamá de Josefina", "Pedido AMBAR."),
+    makeDemoOrder("Roberto", "Particular", "2026-06-05", "2026-06-05", "morning", "2026-06-06", "afternoon", "RYA", 3600, 3600, "Roberto", "Pedido RYA."),
+    makeDemoOrder("Cumple Alma", "Eventos Sol", "2026-06-06", "2026-06-06", "night", "2026-06-07", "afternoon", "ALMA", 4800, 1500, "Tía Laura", "Sale sábado a la noche."),
   ],
 };
 
@@ -21,6 +42,7 @@ const els = {
   todayLabel: document.querySelector("#todayLabel"),
   orderForm: document.querySelector("#orderForm"),
   clientName: document.querySelector("#clientName"),
+  decoratorSelect: document.querySelector("#decoratorSelect"),
   eventDate: document.querySelector("#eventDate"),
   orderLineInput: document.querySelector("#orderLineInput"),
   addTextLineButton: document.querySelector("#addTextLineButton"),
@@ -30,6 +52,10 @@ const els = {
   pickupSlot: document.querySelector("#pickupSlot"),
   returnDate: document.querySelector("#returnDate"),
   returnSlot: document.querySelector("#returnSlot"),
+  pickupPerson: document.querySelector("#pickupPerson"),
+  totalAmount: document.querySelector("#totalAmount"),
+  depositAmount: document.querySelector("#depositAmount"),
+  paymentPreview: document.querySelector("#paymentPreview"),
   orderNote: document.querySelector("#orderNote"),
   availabilityAlert: document.querySelector("#availabilityAlert"),
   reportDate: document.querySelector("#reportDate"),
@@ -40,10 +66,6 @@ const els = {
   returnCount: document.querySelector("#returnCount"),
   messageDraft: document.querySelector("#messageDraft"),
   copyMessageButton: document.querySelector("#copyMessageButton"),
-  inventoryForm: document.querySelector("#inventoryForm"),
-  inventoryLetter: document.querySelector("#inventoryLetter"),
-  inventoryQuantity: document.querySelector("#inventoryQuantity"),
-  inventoryGrid: document.querySelector("#inventoryGrid"),
   resetDemoButton: document.querySelector("#resetDemoButton"),
   statusFilter: document.querySelector("#statusFilter"),
   upcomingDays: document.querySelector("#upcomingDays"),
@@ -60,6 +82,7 @@ function init() {
   els.pickupDate.value = shiftDate(today, -1);
   els.returnDate.value = shiftDate(today, 1);
   els.reportDate.value = today;
+  renderDecorators();
   bindEvents();
   renderAll();
 }
@@ -93,8 +116,8 @@ function bindEvents() {
       renderAvailability();
     });
   });
+  ["totalAmount", "depositAmount"].forEach((id) => els[id].addEventListener("input", renderPaymentPreview));
   els.orderForm.addEventListener("submit", saveOrder);
-  els.inventoryForm.addEventListener("submit", saveInventory);
   els.reportDate.addEventListener("change", () => {
     selectedAgendaDate = els.reportDate.value;
     renderReport();
@@ -106,10 +129,11 @@ function bindEvents() {
   els.copyMessageButton.addEventListener("click", copyMessage);
 }
 
-function makeDemoOrder(client, eventDate, pickupDate, pickupSlot, returnDate, returnSlot, word, note) {
+function makeDemoOrder(client, decorator, eventDate, pickupDate, pickupSlot, returnDate, returnSlot, word, totalAmount, depositAmount, pickupPerson, note) {
   return {
     id: crypto.randomUUID(),
     client,
+    decorator,
     eventDate,
     pickupDate,
     pickupSlot,
@@ -117,6 +141,9 @@ function makeDemoOrder(client, eventDate, pickupDate, pickupSlot, returnDate, re
     returnSlot,
     word,
     letters: countLetters(word),
+    totalAmount,
+    depositAmount,
+    pickupPerson,
     note,
     status: "active",
     createdAt: new Date().toISOString(),
@@ -124,29 +151,54 @@ function makeDemoOrder(client, eventDate, pickupDate, pickupSlot, returnDate, re
 }
 
 function loadState() {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = localStorage.getItem(STORAGE_KEY) || LEGACY_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
   if (!stored) return structuredClone(demoState);
+
   try {
-    const parsed = JSON.parse(stored);
-    return {
-      inventory: { ...structuredClone(demoState.inventory), ...(parsed.inventory || {}) },
-      orders: parsed.orders || [],
-    };
+    return normalizeState(JSON.parse(stored));
   } catch {
     return structuredClone(demoState);
   }
 }
 
+function normalizeState(raw) {
+  const inventory = { ...structuredClone(defaultInventory) };
+  Object.entries(raw.inventory || {}).forEach(([letter, value]) => {
+    inventory[letter] =
+      typeof value === "number"
+        ? { stock: value, price: defaultInventory[letter]?.price || 1200 }
+        : { stock: Number(value.stock) || 0, price: Number(value.price) || defaultInventory[letter]?.price || 1200 };
+  });
+
+  const decorators = raw.decorators?.length ? raw.decorators : ["Particular"];
+  const orders = (raw.orders || []).map((order) => ({
+    ...order,
+    decorator: order.decorator || "Particular",
+    pickupPerson: order.pickupPerson || "",
+    totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), inventory),
+    depositAmount: Number(order.depositAmount) || 0,
+  }));
+
+  return { inventory, decorators, orders };
+}
+
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  LEGACY_KEYS.forEach((key) => localStorage.removeItem(key));
 }
 
 function renderAll() {
   renderText();
+  renderPaymentPreview();
   renderAvailability();
-  renderInventory();
   renderReport();
   renderAgenda();
+}
+
+function renderDecorators() {
+  els.decoratorSelect.innerHTML = state.decorators
+    .map((decorator) => `<option value="${escapeHtml(decorator)}">${escapeHtml(decorator)}</option>`)
+    .join("");
 }
 
 function addTextLine() {
@@ -159,7 +211,9 @@ function addTextLine() {
 
 function syncText() {
   draftLetters = countLetters(textParts.join(""));
+  if (!els.totalAmount.value) els.totalAmount.value = estimatePrice(draftLetters, state.inventory);
   renderText();
+  renderPaymentPreview();
   renderAvailability();
 }
 
@@ -179,6 +233,7 @@ function renderText() {
   els.orderPreview.querySelectorAll("[data-remove-part]").forEach((button) => {
     button.addEventListener("click", () => {
       textParts.splice(Number(button.dataset.removePart), 1);
+      els.totalAmount.value = estimatePrice(countLetters(textParts.join("")), state.inventory);
       syncText();
     });
   });
@@ -193,6 +248,7 @@ function removeOneLetter(letter) {
   const chars = [...textParts[partIndex]];
   chars.splice(chars.indexOf(letter), 1);
   chars.length ? (textParts[partIndex] = chars.join("")) : textParts.splice(partIndex, 1);
+  els.totalAmount.value = estimatePrice(countLetters(textParts.join("")), state.inventory);
   syncText();
 }
 
@@ -207,6 +263,7 @@ function saveOrder(event) {
   const order = {
     id: crypto.randomUUID(),
     client: els.clientName.value.trim(),
+    decorator: els.decoratorSelect.value || "Particular",
     eventDate: els.eventDate.value,
     pickupDate: els.pickupDate.value,
     pickupSlot: els.pickupSlot.value,
@@ -214,6 +271,9 @@ function saveOrder(event) {
     returnSlot: els.returnSlot.value,
     word: textParts.join(""),
     letters: { ...draftLetters },
+    pickupPerson: els.pickupPerson.value.trim(),
+    totalAmount: moneyValue(els.totalAmount.value),
+    depositAmount: moneyValue(els.depositAmount.value),
     note: els.orderNote.value.trim(),
     status: "active",
     createdAt: new Date().toISOString(),
@@ -235,7 +295,7 @@ function validateDraft() {
     .map(([letter, requested]) => {
       const overlapping = state.orders.filter((order) => order.status === "active" && rangesOverlap(order));
       const used = overlapping.reduce((total, order) => total + (order.letters[letter] || 0), 0);
-      const available = (state.inventory[letter] || 0) - used;
+      const available = (state.inventory[letter]?.stock || 0) - used;
       return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map((order) => order.client) };
     })
     .filter((item) => item.requested > item.available);
@@ -257,34 +317,18 @@ function renderAvailability() {
   showAvailability(`Disponible para reservar: ${lettersText(draftLetters)}.`, "good");
 }
 
+function renderPaymentPreview() {
+  const total = moneyValue(els.totalAmount.value);
+  const deposit = moneyValue(els.depositAmount.value);
+  const due = Math.max(total - deposit, 0);
+  const status = total && due === 0 ? "Pago completo" : total ? `Falta ${formatMoney(due)}` : "Falta cargar el total.";
+  els.paymentPreview.textContent = `Total ${formatMoney(total)} · Seña ${formatMoney(deposit)} · ${status}`;
+  els.paymentPreview.classList.toggle("paid", total > 0 && due === 0);
+}
+
 function showAvailability(message, type) {
   els.availabilityAlert.className = `availability-alert ${type}`;
   els.availabilityAlert.textContent = message;
-}
-
-function saveInventory(event) {
-  event.preventDefault();
-  const letter = els.inventoryLetter.value.trim().toUpperCase();
-  if (!letter) return;
-  state.inventory[letter] = Math.max(0, Number(els.inventoryQuantity.value) || 0);
-  persist();
-  els.inventoryForm.reset();
-  els.inventoryQuantity.value = 1;
-  renderAll();
-}
-
-function renderInventory() {
-  els.inventoryGrid.innerHTML = Object.entries(state.inventory)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([letter, quantity]) => `<span class="stock-tile">${escapeHtml(letter)} <small>${quantity}</small><button type="button" data-stock="${escapeHtml(letter)}">x</button></span>`)
-    .join("");
-  els.inventoryGrid.querySelectorAll("[data-stock]").forEach((button) => {
-    button.addEventListener("click", () => {
-      delete state.inventory[button.dataset.stock];
-      persist();
-      renderAll();
-    });
-  });
 }
 
 function setReportView(view) {
@@ -311,20 +355,20 @@ function renderReport() {
 }
 
 function reportCard(order) {
-  return `<article class="report-item"><strong>${escapeHtml(order.client)}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p></article>`;
+  return `<article class="report-item"><strong>${escapeHtml(order.client)}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>${paymentLine(order)}</p></article>`;
 }
 
 function buildMessage(date, events, pickups, returns) {
   const lines = [`Agenda ${longDate(date)}`];
   if (events.length) {
     lines.push("", "Eventos:");
-    events.forEach((order) => lines.push(`- ${order.client}: ${order.word} (${lettersText(order.letters)})`));
+    events.forEach((order) => lines.push(`- ${order.client}: ${order.word} (${lettersText(order.letters)}) · ${plainPaymentLine(order)}`));
     lines.push("", `Letras ${shortWeekday(date)}:`);
     Object.entries(totalLetters(events)).sort(([a], [b]) => a.localeCompare(b)).forEach(([letter, quantity]) => lines.push(`- ${letter}: ${quantity}`));
   }
   if (pickups.length) {
     lines.push("", "Retiros:");
-    pickups.forEach((order) => lines.push(`- ${order.client}: ${order.word} (${slotLabels[order.pickupSlot]})`));
+    pickups.forEach((order) => lines.push(`- ${order.client}: retira ${order.pickupPerson || "sin cargar"} · ${plainPaymentLine(order)}`));
   }
   if (returns.length) {
     lines.push("", "Devoluciones:");
@@ -358,7 +402,7 @@ function renderAgenda() {
 
 function orderCard(order) {
   const active = order.status === "active";
-  return `<article class="order-card"><div class="order-top"><div><strong>${escapeHtml(order.client)}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p></div><div class="order-actions">${active ? `<button type="button" data-done="${order.id}">Finalizar</button>` : `<button type="button" data-active="${order.id}">Activar</button>`}<button type="button" data-delete="${order.id}">Borrar</button></div></div><p>Evento ${shortDate(order.eventDate)}. Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}, devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}.</p>${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}<div class="tag-row"><span class="tag event">${active ? "Activo" : "Finalizado"}</span></div></article>`;
+  return `<article class="order-card"><div class="order-top"><div><strong>${escapeHtml(order.client)}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>Decoradora: ${escapeHtml(order.decorator || "Particular")}</p><p>Retira: ${escapeHtml(order.pickupPerson || "sin cargar")}</p><p>${paymentLine(order)}</p></div><div class="order-actions">${active ? `<button type="button" data-done="${order.id}">Finalizar</button>` : `<button type="button" data-active="${order.id}">Activar</button>`}<button type="button" data-delete="${order.id}">Borrar</button></div></div><p>Evento ${shortDate(order.eventDate)}. Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}, devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}.</p>${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}<div class="tag-row"><span class="tag event">${active ? "Activo" : "Finalizado"}</span><span class="tag">${paymentStatus(order)}</span></div></article>`;
 }
 
 function updateStatus(id, status) {
@@ -376,10 +420,14 @@ function deleteOrder(id) {
 function clearForm() {
   els.clientName.value = "";
   els.orderLineInput.value = "";
+  els.pickupPerson.value = "";
+  els.totalAmount.value = "";
+  els.depositAmount.value = "";
   els.orderNote.value = "";
   textParts = [];
   draftLetters = {};
   renderText();
+  renderPaymentPreview();
   renderAvailability();
 }
 
@@ -389,6 +437,7 @@ function resetDemo() {
   draftLetters = {};
   selectedAgendaDate = "";
   persist();
+  renderDecorators();
   renderAll();
 }
 
@@ -409,6 +458,10 @@ function normalizeText(text) {
   return text.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
 }
 
+function estimatePrice(letters, inventory = state.inventory) {
+  return Object.entries(letters).reduce((total, [letter, quantity]) => total + quantity * (inventory[letter]?.price || 0), 0);
+}
+
 function lettersText(letters) {
   return Object.entries(letters).sort(([a], [b]) => a.localeCompare(b)).map(([letter, quantity]) => `${letter}x${quantity}`).join(", ");
 }
@@ -422,6 +475,31 @@ function totalLetters(orders) {
 
 function lettersTable(letters) {
   return `<table class="letters-table"><thead><tr><th>Letra</th><th>Cant</th></tr></thead><tbody>${Object.entries(letters).sort(([a], [b]) => a.localeCompare(b)).map(([letter, quantity]) => `<tr><td>${escapeHtml(letter)}</td><td>${quantity}</td></tr>`).join("")}</tbody></table>`;
+}
+
+function paymentStatus(order) {
+  return (order.totalAmount || 0) - (order.depositAmount || 0) <= 0 ? "Pago" : "Falta";
+}
+
+function paymentLine(order) {
+  return `Total ${formatMoney(order.totalAmount || 0)} · Seña ${formatMoney(order.depositAmount || 0)} · ${plainDue(order)}`;
+}
+
+function plainPaymentLine(order) {
+  return `total ${formatMoney(order.totalAmount || 0)}, seña ${formatMoney(order.depositAmount || 0)}, ${plainDue(order).toLowerCase()}`;
+}
+
+function plainDue(order) {
+  const due = Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0);
+  return due ? `Falta ${formatMoney(due)}` : "Pago completo";
+}
+
+function moneyValue(value) {
+  return Math.max(Number(value) || 0, 0);
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value || 0);
 }
 
 function stamp(date, slot) {
