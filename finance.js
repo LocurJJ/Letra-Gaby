@@ -2,22 +2,22 @@ const STORAGE_KEY = "letras-gaby-v3";
 const LEGACY_KEYS = ["letras-gaby-v2", "letras-gaby-v1"];
 
 const defaultInventory = {
-  A: { stock: 5, price: 1200 },
-  B: { stock: 3, price: 1200 },
-  C: { stock: 2, price: 1200 },
-  G: { stock: 2, price: 1200 },
-  I: { stock: 4, price: 1200 },
-  L: { stock: 4, price: 1200 },
-  M: { stock: 3, price: 1200 },
-  O: { stock: 5, price: 1200 },
-  R: { stock: 3, price: 1200 },
-  S: { stock: 3, price: 1200 },
-  Y: { stock: 1, price: 1200 },
-  "★": { stock: 2, price: 1500 },
-  "✝": { stock: 1, price: 1500 },
-  "♥": { stock: 2, price: 1500 },
-  "*": { stock: 2, price: 1500 },
-  "&": { stock: 1, price: 1500 },
+  A: { stock: 5 },
+  B: { stock: 3 },
+  C: { stock: 2 },
+  G: { stock: 2 },
+  I: { stock: 4 },
+  L: { stock: 4 },
+  M: { stock: 3 },
+  O: { stock: 5 },
+  R: { stock: 3 },
+  S: { stock: 3 },
+  Y: { stock: 1 },
+  "★": { stock: 2 },
+  "✝": { stock: 1 },
+  "♥": { stock: 2 },
+  "*": { stock: 2 },
+  "&": { stock: 1 },
 };
 
 let state = loadState();
@@ -31,9 +31,10 @@ const els = {
   pendingTotal: document.querySelector("#pendingTotal"),
   filteredTotal: document.querySelector("#filteredTotal"),
   inventoryForm: document.querySelector("#inventoryForm"),
+  priceForm: document.querySelector("#priceForm"),
+  letterUnitPrice: document.querySelector("#letterUnitPrice"),
   inventoryLetter: document.querySelector("#inventoryLetter"),
   inventoryStock: document.querySelector("#inventoryStock"),
-  inventoryPrice: document.querySelector("#inventoryPrice"),
   inventoryTable: document.querySelector("#inventoryTable"),
   decoratorForm: document.querySelector("#decoratorForm"),
   decoratorName: document.querySelector("#decoratorName"),
@@ -48,6 +49,7 @@ function init() {
   els.financeToday.textContent = longDate(today);
   els.dateFrom.value = monthStart(today);
   els.dateTo.value = today;
+  els.letterUnitPrice.value = state.settings.letterUnitPrice;
   bindEvents();
   render();
 }
@@ -55,13 +57,14 @@ function init() {
 function bindEvents() {
   els.dateFrom.addEventListener("change", render);
   els.dateTo.addEventListener("change", render);
+  els.priceForm.addEventListener("submit", savePrice);
   els.inventoryForm.addEventListener("submit", saveInventory);
   els.decoratorForm.addEventListener("submit", saveDecorator);
 }
 
 function loadState() {
   const stored = localStorage.getItem(STORAGE_KEY) || LEGACY_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
-  if (!stored) return { inventory: structuredClone(defaultInventory), decorators: ["Particular"], orders: [] };
+  if (!stored) return { inventory: structuredClone(defaultInventory), settings: { letterUnitPrice: 10000 }, decorators: ["Particular"], orders: [] };
 
   try {
     const raw = JSON.parse(stored);
@@ -69,30 +72,34 @@ function loadState() {
     Object.entries(raw.inventory || {}).forEach(([letter, value]) => {
       inventory[letter] =
         typeof value === "number"
-          ? { stock: value, price: defaultInventory[letter]?.price || 1200 }
-          : { stock: Number(value.stock) || 0, price: Number(value.price) || defaultInventory[letter]?.price || 1200 };
+          ? { stock: value }
+          : { stock: Number(value.stock) || 0 };
     });
+    const settings = { letterUnitPrice: Number(raw.settings?.letterUnitPrice) || inferLegacyUnitPrice(raw.inventory) || 10000 };
     return {
       inventory,
+      settings,
       decorators: raw.decorators?.length ? raw.decorators : ["Particular"],
       orders: (raw.orders || []).map((order) => ({
         ...order,
         decorator: order.decorator || "Particular",
-        totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || {}, inventory),
+        totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || {}, settings),
         depositAmount: Number(order.depositAmount) || 0,
       })),
     };
   } catch {
-    return { inventory: structuredClone(defaultInventory), decorators: ["Particular"], orders: [] };
+    return { inventory: structuredClone(defaultInventory), settings: { letterUnitPrice: 10000 }, decorators: ["Particular"], orders: [] };
   }
 }
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  LEGACY_KEYS.forEach((key) => localStorage.removeItem(key));
 }
 
 function render() {
   renderTotals();
+  els.letterUnitPrice.value = state.settings.letterUnitPrice;
   renderInventory();
   renderDecorators();
   renderDecoratorStats();
@@ -115,7 +122,6 @@ function renderInventory() {
         <article class="config-row">
           <strong>${escapeHtml(letter)}</strong>
           <span>Stock ${item.stock}</span>
-          <span>${formatMoney(item.price)}</span>
           <button type="button" data-edit-letter="${escapeHtml(letter)}">Editar</button>
           <button type="button" data-delete-letter="${escapeHtml(letter)}">Borrar</button>
         </article>
@@ -128,7 +134,6 @@ function renderInventory() {
       const letter = button.dataset.editLetter;
       els.inventoryLetter.value = letter;
       els.inventoryStock.value = state.inventory[letter].stock;
-      els.inventoryPrice.value = state.inventory[letter].price;
     });
   });
   els.inventoryTable.querySelectorAll("[data-delete-letter]").forEach((button) => {
@@ -146,7 +151,6 @@ function saveInventory(event) {
   if (!letter) return;
   state.inventory[letter] = {
     stock: Math.max(Number(els.inventoryStock.value) || 0, 0),
-    price: Math.max(Number(els.inventoryPrice.value) || 0, 0),
   };
   persist();
   els.inventoryForm.reset();
@@ -217,8 +221,27 @@ function renderDecoratorStats() {
     : `<p class="empty-state">Todavía no hay eventos cargados.</p>`;
 }
 
-function estimatePrice(letters, inventory) {
-  return Object.entries(letters).reduce((total, [letter, quantity]) => total + quantity * (inventory[letter]?.price || 0), 0);
+function savePrice(event) {
+  event.preventDefault();
+  state.settings.letterUnitPrice = Math.max(Number(els.letterUnitPrice.value) || 0, 0);
+  state.orders = state.orders.map((order) => ({
+    ...order,
+    totalAmount: order.totalAmount || estimatePrice(order.letters || {}, state.settings),
+  }));
+  persist();
+  render();
+}
+
+function estimatePrice(letters, settings = state.settings) {
+  const quantity = Object.values(letters).reduce((total, amount) => total + amount, 0);
+  return quantity * (settings?.letterUnitPrice || 0);
+}
+
+function inferLegacyUnitPrice(inventory) {
+  const prices = Object.values(inventory || {})
+    .map((item) => (typeof item === "object" ? Number(item.price) : 0))
+    .filter(Boolean);
+  return prices.length ? Math.max(...prices) : 0;
 }
 
 function sum(orders, key) {
