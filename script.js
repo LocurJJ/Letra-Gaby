@@ -99,7 +99,7 @@ function bindEvents() {
   document.querySelectorAll("[data-special-char]").forEach((button) => {
     button.addEventListener("click", () => {
       textParts.push(button.dataset.specialChar);
-      syncText(true);
+      syncText();
     });
   });
   document.querySelectorAll("[data-report-view]").forEach((card) => {
@@ -117,7 +117,7 @@ function bindEvents() {
       renderAvailability();
     });
   });
-  ["totalAmount", "depositAmount"].forEach((id) => els[id].addEventListener("input", renderPaymentPreview));
+  els.depositAmount.addEventListener("input", renderPaymentPreview);
   els.orderForm.addEventListener("submit", saveOrder);
   els.reportDate.addEventListener("change", () => {
     selectedAgendaDate = els.reportDate.value;
@@ -165,9 +165,13 @@ function loadState() {
 function normalizeState(raw) {
   const inventory = { ...structuredClone(defaultInventory) };
   Object.entries(raw.inventory || {}).forEach(([letter, value]) => {
-    inventory[letter] = typeof value === "number" ? { stock: value } : { stock: Number(value.stock) || 0 };
+    inventory[letter] =
+      typeof value === "number"
+        ? { stock: value }
+        : { stock: Number(value.stock) || 0 };
   });
-  const settings = { letterUnitPrice: Number(raw.settings?.letterUnitPrice) || 10000 };
+
+  const settings = { letterUnitPrice: Number(raw.settings?.letterUnitPrice) || inferLegacyUnitPrice(raw.inventory) || 10000 };
   const decorators = raw.decorators?.length ? raw.decorators : ["Particular"];
   const orders = (raw.orders || []).map((order) => ({
     ...order,
@@ -176,6 +180,7 @@ function normalizeState(raw) {
     totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), settings),
     depositAmount: Number(order.depositAmount) || 0,
   }));
+
   return { inventory, settings, decorators, orders };
 }
 
@@ -193,7 +198,9 @@ function renderAll() {
 }
 
 function renderDecorators() {
-  els.decoratorSelect.innerHTML = state.decorators.map((decorator) => `<option value="${escapeHtml(decorator)}">${escapeHtml(decorator)}</option>`).join("");
+  els.decoratorSelect.innerHTML = state.decorators
+    .map((decorator) => `<option value="${escapeHtml(decorator)}">${escapeHtml(decorator)}</option>`)
+    .join("");
 }
 
 function addTextLine() {
@@ -201,12 +208,12 @@ function addTextLine() {
   if (!value) return;
   textParts.push(value);
   els.orderLineInput.value = "";
-  syncText(true);
+  syncText();
 }
 
-function syncText(updateTotal = false) {
+function syncText() {
   draftLetters = countLetters(textParts.join(""));
-  if (updateTotal || !els.totalAmount.value) els.totalAmount.value = estimatePrice(draftLetters);
+  updateAutomaticTotal();
   renderText();
   renderPaymentPreview();
   renderAvailability();
@@ -215,15 +222,20 @@ function syncText(updateTotal = false) {
 function renderText() {
   const word = textParts.join("");
   els.orderPreview.innerHTML = word
-    ? `<strong>${escapeHtml(word)}</strong><p>${lettersText(draftLetters)}</p><div class="text-parts">${textParts.map((part, index) => `<span>${escapeHtml(part)} <button type="button" data-remove-part="${index}">x</button></span>`).join("")}</div>`
+    ? `<strong>${escapeHtml(word)}</strong><p>${lettersText(draftLetters)}</p><div class="text-parts">${textParts
+        .map((part, index) => `<span>${escapeHtml(part)} <button type="button" data-remove-part="${index}">x</button></span>`)
+        .join("")}</div>`
     : `<strong>Texto</strong><p>Escribí el texto para armar la reserva.</p>`;
 
-  els.selectedLetters.innerHTML = Object.entries(draftLetters).sort(([a], [b]) => a.localeCompare(b)).map(([letter, quantity]) => `<span class="letter-pill">${escapeHtml(letter)}x${quantity}<button type="button" data-remove-letter="${escapeHtml(letter)}">x</button></span>`).join("");
+  els.selectedLetters.innerHTML = Object.entries(draftLetters)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([letter, quantity]) => `<span class="letter-pill">${escapeHtml(letter)}x${quantity}<button type="button" data-remove-letter="${escapeHtml(letter)}">x</button></span>`)
+    .join("");
 
   els.orderPreview.querySelectorAll("[data-remove-part]").forEach((button) => {
     button.addEventListener("click", () => {
       textParts.splice(Number(button.dataset.removePart), 1);
-      syncText(true);
+      syncText();
     });
   });
   els.selectedLetters.querySelectorAll("[data-remove-letter]").forEach((button) => {
@@ -237,14 +249,17 @@ function removeOneLetter(letter) {
   const chars = [...textParts[partIndex]];
   chars.splice(chars.indexOf(letter), 1);
   chars.length ? (textParts[partIndex] = chars.join("")) : textParts.splice(partIndex, 1);
-  syncText(true);
+  syncText();
 }
 
 function saveOrder(event) {
   event.preventDefault();
   if (els.orderLineInput.value.trim()) addTextLine();
   const validation = validateDraft();
-  if (!validation.ok) return showAvailability(validation.message, "bad");
+  if (!validation.ok) {
+    showAvailability(validation.message, "bad");
+    return;
+  }
   const order = {
     id: crypto.randomUUID(),
     client: els.clientName.value.trim(),
@@ -257,7 +272,7 @@ function saveOrder(event) {
     word: textParts.join(""),
     letters: { ...draftLetters },
     pickupPerson: els.pickupPerson.value.trim(),
-    totalAmount: moneyValue(els.totalAmount.value),
+    totalAmount: estimatePrice(draftLetters),
     depositAmount: moneyValue(els.depositAmount.value),
     note: els.orderNote.value.trim(),
     status: "active",
@@ -273,15 +288,22 @@ function saveOrder(event) {
 
 function validateDraft() {
   if (!Object.keys(draftLetters).length) return { ok: false, message: "Escribí al menos una letra." };
-  if (stamp(els.pickupDate.value, els.pickupSlot.value) > stamp(els.returnDate.value, els.returnSlot.value)) return { ok: false, message: "La devolución tiene que ser posterior al retiro." };
-  const conflicts = Object.entries(draftLetters).map(([letter, requested]) => {
-    const overlapping = state.orders.filter((order) => order.status === "active" && rangesOverlap(order));
-    const used = overlapping.reduce((total, order) => total + (order.letters[letter] || 0), 0);
-    const available = (state.inventory[letter]?.stock || 0) - used;
-    return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map((order) => order.client) };
-  }).filter((item) => item.requested > item.available);
+  if (stamp(els.pickupDate.value, els.pickupSlot.value) > stamp(els.returnDate.value, els.returnSlot.value)) {
+    return { ok: false, message: "La devolución tiene que ser posterior al retiro." };
+  }
+  const conflicts = Object.entries(draftLetters)
+    .map(([letter, requested]) => {
+      const overlapping = state.orders.filter((order) => order.status === "active" && rangesOverlap(order));
+      const used = overlapping.reduce((total, order) => total + (order.letters[letter] || 0), 0);
+      const available = (state.inventory[letter]?.stock || 0) - used;
+      return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map((order) => order.client) };
+    })
+    .filter((item) => item.requested > item.available);
   if (!conflicts.length) return { ok: true };
-  return { ok: false, message: conflicts.map((item) => `${item.letter}: pedís ${item.requested}, hay ${item.available}. Choca con ${item.orders.join(", ")}.`).join(" ") };
+  return {
+    ok: false,
+    message: conflicts.map((item) => `${item.letter}: pedís ${item.requested}, hay ${item.available}. Choca con ${item.orders.join(", ")}.`).join(" "),
+  };
 }
 
 function rangesOverlap(order) {
@@ -299,9 +321,14 @@ function renderPaymentPreview() {
   const total = moneyValue(els.totalAmount.value);
   const deposit = moneyValue(els.depositAmount.value);
   const due = Math.max(total - deposit, 0);
-  const status = total && due === 0 ? "Pago completo" : total ? `Falta ${formatMoney(due)}` : "Falta cargar el total.";
+  const hasLetters = Object.keys(draftLetters).length > 0;
+  const status = total && due === 0 ? "Pago completo" : total ? `Falta ${formatMoney(due)}` : hasLetters ? "Configurá el precio por letra en Finanzas." : "Escribí las letras para calcular el total.";
   els.paymentPreview.textContent = `Total ${formatMoney(total)} · Seña ${formatMoney(deposit)} · ${status}`;
   els.paymentPreview.classList.toggle("paid", total > 0 && due === 0);
+}
+
+function updateAutomaticTotal() {
+  els.totalAmount.value = estimatePrice(draftLetters);
 }
 
 function showAvailability(message, type) {
@@ -439,6 +466,13 @@ function normalizeText(text) {
 function estimatePrice(letters, settings = state.settings) {
   const quantity = Object.values(letters).reduce((total, amount) => total + amount, 0);
   return quantity * (settings?.letterUnitPrice || 0);
+}
+
+function inferLegacyUnitPrice(inventory) {
+  const prices = Object.values(inventory || {})
+    .map((item) => (typeof item === "object" ? Number(item.price) : 0))
+    .filter(Boolean);
+  return prices.length ? Math.max(...prices) : 0;
 }
 
 function lettersText(letters) {
