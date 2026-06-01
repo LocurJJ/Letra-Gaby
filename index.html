@@ -12,7 +12,10 @@
         <p class="eyebrow">Agenda e inventario</p>
         <h1>Letras Gaby</h1>
       </div>
-      <div class="date-chip" id="todayLabel"></div>
+      <div class="header-actions">
+        <a class="ghost-link" href="finance.html" target="_blank">Finanzas</a>
+        <div class="date-chip" id="todayLabel"></div>
+      </div>
     </header>
 
     <main class="app-shell">
@@ -27,6 +30,7 @@
 
         <form id="orderForm" class="order-form">
           <label>Cliente <input id="clientName" type="text" placeholder="Nombre o evento" required /></label>
+          <label>Decoradora <select id="decoratorSelect"></select></label>
           <label>Fecha del evento <input id="eventDate" type="date" required /></label>
 
           <label>
@@ -74,6 +78,13 @@
             </label>
           </div>
 
+          <label>Quién retira <input id="pickupPerson" type="text" placeholder="Nombre de quien retira" /></label>
+          <div class="form-grid money-grid">
+            <label>Total <input id="totalAmount" type="number" min="0" step="100" placeholder="0" /></label>
+            <label>Seña <input id="depositAmount" type="number" min="0" step="100" placeholder="0" /></label>
+          </div>
+          <div id="paymentPreview" class="payment-preview">Falta cargar el total o la seña.</div>
+
           <label>Nota <textarea id="orderNote" rows="3" placeholder="Color, seña, dirección, detalle especial"></textarea></label>
           <div id="availabilityAlert" class="availability-alert neutral">Escribí el texto para revisar disponibilidad.</div>
           <button class="primary-button" type="submit">Guardar pedido</button>
@@ -116,22 +127,6 @@
         </div>
       </section>
 
-      <section class="panel inventory-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Stock</p>
-            <h2>Inventario</h2>
-          </div>
-          <button class="ghost-button" id="resetDemoButton" type="button">Reiniciar demo</button>
-        </div>
-        <form id="inventoryForm" class="inventory-form">
-          <input id="inventoryLetter" type="text" maxlength="3" placeholder="Letra" required />
-          <input id="inventoryQuantity" type="number" min="0" value="1" required />
-          <button class="icon-button" type="submit">+</button>
-        </form>
-        <div id="inventoryGrid" class="inventory-grid"></div>
-      </section>
-
       <section class="panel orders-panel">
         <div class="panel-heading">
           <div>
@@ -144,6 +139,7 @@
             <option value="completed">Finalizados</option>
           </select>
         </div>
+        <button class="ghost-button" id="resetDemoButton" type="button">Reiniciar demo</button>
         <div id="upcomingDays" class="upcoming-days"></div>
         <div id="ordersList" class="orders-list"></div>
       </section>
