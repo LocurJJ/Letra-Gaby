@@ -30,6 +30,7 @@ const els = {
   collectedTotal: document.querySelector("#collectedTotal"),
   pendingTotal: document.querySelector("#pendingTotal"),
   filteredTotal: document.querySelector("#filteredTotal"),
+  pendingLetters: document.querySelector("#pendingLetters"),
   inventoryForm: document.querySelector("#inventoryForm"),
   priceForm: document.querySelector("#priceForm"),
   letterUnitPrice: document.querySelector("#letterUnitPrice"),
@@ -112,6 +113,7 @@ function renderTotals() {
   els.collectedTotal.textContent = formatMoney(sum(orders, "depositAmount"));
   els.pendingTotal.textContent = formatMoney(orders.reduce((total, order) => total + Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0), 0));
   els.filteredTotal.textContent = formatMoney(sum(filtered, "totalAmount"));
+  els.pendingLetters.textContent = countPendingReturnLetters(orders);
 }
 
 function renderInventory() {
@@ -235,6 +237,13 @@ function savePrice(event) {
 function estimatePrice(letters, settings = state.settings) {
   const quantity = Object.values(letters).reduce((total, amount) => total + amount, 0);
   return quantity * (settings?.letterUnitPrice || 0);
+}
+
+function countPendingReturnLetters(orders) {
+  const today = dateInput(new Date());
+  return orders
+    .filter((order) => order.status === "active" && order.pickupDate <= today && order.returnDate >= today)
+    .reduce((total, order) => total + Object.values(order.letters || {}).reduce((sum, quantity) => sum + quantity, 0), 0);
 }
 
 function inferLegacyUnitPrice(inventory) {
