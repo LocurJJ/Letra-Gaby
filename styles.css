@@ -74,11 +74,41 @@ button {
   font-weight: 800;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ghost-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--ink);
+  font-weight: 900;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.15fr);
   gap: 18px;
   padding: 0 clamp(18px, 4vw, 54px) 36px;
+}
+
+.finance-shell {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 18px;
+  padding: 0 clamp(18px, 4vw, 54px) 36px;
+}
+
+.finance-wide {
+  grid-column: span 2;
 }
 
 .panel {
@@ -163,6 +193,19 @@ textarea:focus {
 .inventory-form {
   grid-template-columns: 1fr 90px 44px;
   align-items: end;
+}
+
+.inventory-config-form {
+  display: grid;
+  grid-template-columns: 1fr 100px 120px 44px;
+  gap: 10px;
+  align-items: end;
+}
+
+.decorator-form {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  gap: 10px;
 }
 
 .icon-button,
@@ -288,6 +331,20 @@ textarea:focus {
   color: #9d2d1f;
 }
 
+.payment-preview {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--muted);
+  font-weight: 900;
+  padding: 11px 12px;
+}
+
+.payment-preview.paid {
+  background: #edf9f5;
+  color: #0d5f55;
+}
+
 .metric-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -295,19 +352,29 @@ textarea:focus {
   margin-bottom: 14px;
 }
 
-.metric-card {
+.finance-metrics {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.metric-card,
+.metric-row article {
   border-left: 4px solid var(--teal);
   border-radius: 6px;
   background: var(--white);
   padding: 12px;
+}
+
+.metric-card {
   cursor: pointer;
 }
 
-.metric-card:nth-child(2) {
+.metric-card:nth-child(2),
+.metric-row article:nth-child(2) {
   border-color: var(--amber);
 }
 
-.metric-card:nth-child(3) {
+.metric-card:nth-child(3),
+.metric-row article:nth-child(3) {
   border-color: var(--sky);
 }
 
@@ -318,13 +385,15 @@ textarea:focus {
   box-shadow: 0 12px 28px rgba(36, 39, 42, 0.13);
 }
 
-.metric-card span {
+.metric-card span,
+.metric-row span {
   display: block;
   font-size: 1.75rem;
   font-weight: 950;
 }
 
-.metric-card p {
+.metric-card p,
+.metric-row p {
   margin: 2px 0 0;
   color: var(--muted);
   font-weight: 800;
@@ -332,8 +401,41 @@ textarea:focus {
 
 .report-list,
 .orders-list,
-.upcoming-days {
+.upcoming-days,
+.config-list {
   display: grid;
+  gap: 10px;
+}
+
+.config-list {
+  margin-top: 12px;
+}
+
+.config-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 10px 12px;
+}
+
+.config-row span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.config-row button {
+  border: 0;
+  background: transparent;
+  color: var(--coral);
+  font-weight: 900;
+}
+
+.date-filter {
+  display: flex;
   gap: 10px;
 }
 
@@ -452,12 +554,14 @@ textarea:focus {
     flex-direction: column;
   }
 
-  .app-shell {
+  .app-shell,
+  .finance-shell {
     grid-template-columns: 1fr;
   }
 
   .planner-panel,
-  .orders-panel {
+  .orders-panel,
+  .finance-wide {
     grid-column: auto;
     grid-row: auto;
   }
@@ -469,7 +573,12 @@ textarea:focus {
   }
 
   .form-grid,
-  .metric-row {
+  .metric-row,
+  .finance-metrics,
+  .inventory-config-form,
+  .config-row,
+  .date-filter {
     grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }
