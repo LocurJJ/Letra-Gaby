@@ -55,13 +55,16 @@
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Inventario</p>
-            <h2>Letras y precios</h2>
+            <h2>Letras</h2>
           </div>
         </div>
+        <form id="priceForm" class="price-form">
+          <label>Precio por letra <input id="letterUnitPrice" type="number" min="0" step="500" required /></label>
+          <button class="primary-button" type="submit">Guardar precio</button>
+        </form>
         <form id="inventoryForm" class="inventory-config-form">
           <input id="inventoryLetter" type="text" maxlength="3" placeholder="Letra" required />
           <input id="inventoryStock" type="number" min="0" placeholder="Stock" required />
-          <input id="inventoryPrice" type="number" min="0" step="100" placeholder="Precio" required />
           <button class="icon-button" type="submit">+</button>
         </form>
         <div id="inventoryTable" class="config-list"></div>
