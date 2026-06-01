@@ -197,9 +197,17 @@ textarea:focus {
 
 .inventory-config-form {
   display: grid;
-  grid-template-columns: 1fr 100px 120px 44px;
+  grid-template-columns: 1fr 120px 44px;
   gap: 10px;
   align-items: end;
+}
+
+.price-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
 }
 
 .decorator-form {
@@ -356,25 +364,19 @@ textarea:focus {
   grid-template-columns: repeat(4, 1fr);
 }
 
-.metric-card,
-.metric-row article {
+.metric-card {
   border-left: 4px solid var(--teal);
   border-radius: 6px;
   background: var(--white);
   padding: 12px;
-}
-
-.metric-card {
   cursor: pointer;
 }
 
-.metric-card:nth-child(2),
-.metric-row article:nth-child(2) {
+.metric-card:nth-child(2) {
   border-color: var(--amber);
 }
 
-.metric-card:nth-child(3),
-.metric-row article:nth-child(3) {
+.metric-card:nth-child(3) {
   border-color: var(--sky);
 }
 
@@ -385,15 +387,13 @@ textarea:focus {
   box-shadow: 0 12px 28px rgba(36, 39, 42, 0.13);
 }
 
-.metric-card span,
-.metric-row span {
+.metric-card span {
   display: block;
   font-size: 1.75rem;
   font-weight: 950;
 }
 
-.metric-card p,
-.metric-row p {
+.metric-card p {
   margin: 2px 0 0;
   color: var(--muted);
   font-weight: 800;
@@ -554,7 +554,10 @@ textarea:focus {
     flex-direction: column;
   }
 
-  .app-shell,
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
   .finance-shell {
     grid-template-columns: 1fr;
   }
