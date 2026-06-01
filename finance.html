@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finanzas - Letras Gaby</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Finanzas y configuración</p>
+        <h1>Letras Gaby</h1>
+      </div>
+      <div class="header-actions">
+        <a class="ghost-link" href="index.html">Agenda</a>
+        <div class="date-chip" id="financeToday"></div>
+      </div>
+    </header>
+
+    <main class="finance-shell">
+      <section class="panel finance-wide">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Resumen</p>
+            <h2>Finanzas</h2>
+          </div>
+          <div class="date-filter">
+            <label>Desde <input id="dateFrom" type="date" /></label>
+            <label>Hasta <input id="dateTo" type="date" /></label>
+          </div>
+        </div>
+
+        <div class="metric-row finance-metrics">
+          <article>
+            <span id="grossTotal">$0</span>
+            <p>total vendido</p>
+          </article>
+          <article>
+            <span id="collectedTotal">$0</span>
+            <p>cobrado / señas</p>
+          </article>
+          <article>
+            <span id="pendingTotal">$0</span>
+            <p>pendiente</p>
+          </article>
+          <article>
+            <span id="filteredTotal">$0</span>
+            <p>total filtrado</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Inventario</p>
+            <h2>Letras y precios</h2>
+          </div>
+        </div>
+        <form id="inventoryForm" class="inventory-config-form">
+          <input id="inventoryLetter" type="text" maxlength="3" placeholder="Letra" required />
+          <input id="inventoryStock" type="number" min="0" placeholder="Stock" required />
+          <input id="inventoryPrice" type="number" min="0" step="100" placeholder="Precio" required />
+          <button class="icon-button" type="submit">+</button>
+        </form>
+        <div id="inventoryTable" class="config-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Clientes</p>
+            <h2>Decoradoras</h2>
+          </div>
+        </div>
+        <form id="decoratorForm" class="decorator-form">
+          <input id="decoratorName" type="text" placeholder="Nombre de decoradora" required />
+          <button class="icon-button" type="submit">+</button>
+        </form>
+        <div id="decoratorList" class="config-list"></div>
+      </section>
+
+      <section class="panel finance-wide">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Ranking</p>
+            <h2>Top decoradoras</h2>
+          </div>
+        </div>
+        <div id="decoratorStats" class="orders-list"></div>
+      </section>
+    </main>
+
+    <script src="finance.js"></script>
+  </body>
+</html>
