@@ -112,7 +112,8 @@ button {
 
 .small-heading {
   margin-bottom: 8px;
-}\n
+}
+
 .order-form,
 .inventory-form {
   display: grid;
