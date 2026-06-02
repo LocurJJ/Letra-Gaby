@@ -31,6 +31,11 @@ const els = {
   pendingTotal: document.querySelector("#pendingTotal"),
   filteredTotal: document.querySelector("#filteredTotal"),
   pendingLetters: document.querySelector("#pendingLetters"),
+  grossBar: document.querySelector("#grossBar"),
+  collectedBar: document.querySelector("#collectedBar"),
+  pendingBar: document.querySelector("#pendingBar"),
+  filteredBar: document.querySelector("#filteredBar"),
+  pendingLettersBar: document.querySelector("#pendingLettersBar"),
   inventoryForm: document.querySelector("#inventoryForm"),
   priceForm: document.querySelector("#priceForm"),
   letterUnitPrice: document.querySelector("#letterUnitPrice"),
@@ -109,11 +114,24 @@ function render() {
 function renderTotals() {
   const orders = state.orders;
   const filtered = orders.filter((order) => order.eventDate >= els.dateFrom.value && order.eventDate <= els.dateTo.value);
-  els.grossTotal.textContent = formatMoney(sum(orders, "totalAmount"));
-  els.collectedTotal.textContent = formatMoney(sum(orders, "depositAmount"));
-  els.pendingTotal.textContent = formatMoney(orders.reduce((total, order) => total + Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0), 0));
-  els.filteredTotal.textContent = formatMoney(sum(filtered, "totalAmount"));
-  els.pendingLetters.textContent = countPendingReturnLetters(orders);
+  const gross = sum(orders, "totalAmount");
+  const collected = sum(orders, "depositAmount");
+  const pending = orders.reduce((total, order) => total + Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0), 0);
+  const filteredTotal = sum(filtered, "totalAmount");
+  const pendingLetters = countPendingReturnLetters(orders);
+  const activeLetters = countActiveLetters(orders);
+
+  els.grossTotal.textContent = formatMoney(gross);
+  els.collectedTotal.textContent = formatMoney(collected);
+  els.pendingTotal.textContent = formatMoney(pending);
+  els.filteredTotal.textContent = formatMoney(filteredTotal);
+  els.pendingLetters.textContent = pendingLetters;
+
+  setBar(els.grossBar, gross ? 100 : 0);
+  setBar(els.collectedBar, percent(collected, gross));
+  setBar(els.pendingBar, percent(pending, gross));
+  setBar(els.filteredBar, percent(filteredTotal, gross));
+  setBar(els.pendingLettersBar, percent(pendingLetters, activeLetters || pendingLetters));
 }
 
 function renderInventory() {
@@ -244,6 +262,20 @@ function countPendingReturnLetters(orders) {
   return orders
     .filter((order) => order.status === "active" && order.pickupDate <= today && order.returnDate >= today)
     .reduce((total, order) => total + Object.values(order.letters || {}).reduce((sum, quantity) => sum + quantity, 0), 0);
+}
+
+function countActiveLetters(orders) {
+  return orders
+    .filter((order) => order.status === "active")
+    .reduce((total, order) => total + Object.values(order.letters || {}).reduce((sum, quantity) => sum + quantity, 0), 0);
+}
+
+function percent(value, total) {
+  return total > 0 ? Math.min(Math.round((value / total) * 100), 100) : 0;
+}
+
+function setBar(element, value) {
+  element.style.width = `${value}%`;
 }
 
 function inferLegacyUnitPrice(inventory) {
