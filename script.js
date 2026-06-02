@@ -42,7 +42,6 @@ let selectedAgendaDate = "";
 const els = {
   todayLabel: document.querySelector("#todayLabel"),
   orderForm: document.querySelector("#orderForm"),
-  clientName: document.querySelector("#clientName"),
   decoratorSelect: document.querySelector("#decoratorSelect"),
   eventDate: document.querySelector("#eventDate"),
   orderLineInput: document.querySelector("#orderLineInput"),
@@ -262,7 +261,7 @@ function saveOrder(event) {
   }
   const order = {
     id: crypto.randomUUID(),
-    client: els.clientName.value.trim(),
+    client: els.decoratorSelect.value || "Particular",
     decorator: els.decoratorSelect.value || "Particular",
     eventDate: els.eventDate.value,
     pickupDate: els.pickupDate.value,
@@ -296,7 +295,7 @@ function validateDraft() {
       const overlapping = state.orders.filter((order) => order.status === "active" && rangesOverlap(order));
       const used = overlapping.reduce((total, order) => total + (order.letters[letter] || 0), 0);
       const available = (state.inventory[letter]?.stock || 0) - used;
-      return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map((order) => order.client) };
+      return { letter, requested, available, orders: overlapping.filter((order) => order.letters[letter]).map(displayOrderName) };
     })
     .filter((item) => item.requested > item.available);
   if (!conflicts.length) return { ok: true };
@@ -360,24 +359,24 @@ function renderReport() {
 }
 
 function reportCard(order) {
-  return `<article class="report-item"><strong>${escapeHtml(order.client)}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>${paymentLine(order)}</p></article>`;
+  return `<article class="report-item"><strong>${escapeHtml(displayOrderName(order))}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>${paymentLine(order)}</p></article>`;
 }
 
 function buildMessage(date, events, pickups, returns) {
   const lines = [`Agenda ${longDate(date)}`];
   if (events.length) {
     lines.push("", "Eventos:");
-    events.forEach((order) => lines.push(`- ${order.client}: ${order.word} (${lettersText(order.letters)}) · ${plainPaymentLine(order)}`));
+    events.forEach((order) => lines.push(`- ${displayOrderName(order)}: ${order.word} (${lettersText(order.letters)}) · ${plainPaymentLine(order)}`));
     lines.push("", `Letras ${shortWeekday(date)}:`);
     Object.entries(totalLetters(events)).sort(([a], [b]) => a.localeCompare(b)).forEach(([letter, quantity]) => lines.push(`- ${letter}: ${quantity}`));
   }
   if (pickups.length) {
     lines.push("", "Retiros:");
-    pickups.forEach((order) => lines.push(`- ${order.client}: retira ${order.pickupPerson || "sin cargar"} · ${plainPaymentLine(order)}`));
+    pickups.forEach((order) => lines.push(`- ${displayOrderName(order)}: retira ${order.pickupPerson || "sin cargar"} · ${plainPaymentLine(order)}`));
   }
   if (returns.length) {
     lines.push("", "Devoluciones:");
-    returns.forEach((order) => lines.push(`- ${order.client}: ${order.word} (${slotLabels[order.returnSlot]})`));
+    returns.forEach((order) => lines.push(`- ${displayOrderName(order)}: ${order.word} (${slotLabels[order.returnSlot]})`));
   }
   if (lines.length === 1) lines.push("", "Sin movimientos cargados.");
   return lines.join("\n");
@@ -407,7 +406,7 @@ function renderAgenda() {
 
 function orderCard(order) {
   const active = order.status === "active";
-  return `<article class="order-card"><div class="order-top"><div><strong>${escapeHtml(order.client)}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>Decoradora: ${escapeHtml(order.decorator || "Particular")}</p><p>Retira: ${escapeHtml(order.pickupPerson || "sin cargar")}</p><p>${paymentLine(order)}</p></div><div class="order-actions">${active ? `<button type="button" data-done="${order.id}">Finalizar</button>` : `<button type="button" data-active="${order.id}">Activar</button>`}<button type="button" data-delete="${order.id}">Borrar</button></div></div><p>Evento ${shortDate(order.eventDate)}. Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}, devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}.</p>${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}<div class="tag-row"><span class="tag event">${active ? "Activo" : "Finalizado"}</span><span class="tag">${paymentStatus(order)}</span></div></article>`;
+  return `<article class="order-card"><div class="order-top"><div><strong>${escapeHtml(displayOrderName(order))}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>Retira: ${escapeHtml(order.pickupPerson || "sin cargar")}</p><p>${paymentLine(order)}</p></div><div class="order-actions">${active ? `<button type="button" data-done="${order.id}">Finalizar</button>` : `<button type="button" data-active="${order.id}">Activar</button>`}<button type="button" data-delete="${order.id}">Borrar</button></div></div><p>Evento ${shortDate(order.eventDate)}. Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}, devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}.</p>${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}<div class="tag-row"><span class="tag event">${active ? "Activo" : "Finalizado"}</span><span class="tag">${paymentStatus(order)}</span></div></article>`;
 }
 
 function updateStatus(id, status) {
@@ -423,7 +422,6 @@ function deleteOrder(id) {
 }
 
 function clearForm() {
-  els.clientName.value = "";
   els.orderLineInput.value = "";
   els.pickupPerson.value = "";
   els.totalAmount.value = "";
@@ -505,6 +503,10 @@ function plainPaymentLine(order) {
 function plainDue(order) {
   const due = Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0);
   return due ? `Falta ${formatMoney(due)}` : "Pago completo";
+}
+
+function displayOrderName(order) {
+  return order.decorator || order.client || "Particular";
 }
 
 function moneyValue(value) {
