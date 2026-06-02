@@ -1,24 +1,7 @@
 const STORAGE_KEY = "letras-gaby-v3";
 const LEGACY_KEYS = ["letras-gaby-v2", "letras-gaby-v1"];
 
-const defaultInventory = {
-  A: { stock: 5 },
-  B: { stock: 3 },
-  C: { stock: 2 },
-  G: { stock: 2 },
-  I: { stock: 4 },
-  L: { stock: 4 },
-  M: { stock: 3 },
-  O: { stock: 5 },
-  R: { stock: 3 },
-  S: { stock: 3 },
-  Y: { stock: 1 },
-  "★": { stock: 2 },
-  "✝": { stock: 1 },
-  "♥": { stock: 2 },
-  "*": { stock: 2 },
-  "&": { stock: 1 },
-};
+
 
 let state = loadState();
 
