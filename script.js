@@ -22,15 +22,11 @@ const defaultInventory = {
   "&": { stock: 1 },
 };
 
-const demoState = {
+const initialState = {
   inventory: structuredClone(defaultInventory),
   settings: { letterUnitPrice: 10000 },
-  decorators: ["Particular", "Decoradora Ana", "Eventos Sol"],
-  orders: [
-    makeDemoOrder("Josefina", "Decoradora Ana", "2026-06-05", "2026-06-04", "afternoon", "2026-06-06", "morning", "AMBAR", 50000, 30000, "Mamá de Josefina", "Pedido AMBAR."),
-    makeDemoOrder("Roberto", "Particular", "2026-06-05", "2026-06-05", "morning", "2026-06-06", "afternoon", "RYA", 30000, 30000, "Roberto", "Pedido RYA."),
-    makeDemoOrder("Cumple Alma", "Eventos Sol", "2026-06-06", "2026-06-06", "night", "2026-06-07", "afternoon", "ALMA", 40000, 15000, "Tía Laura", "Sale sábado a la noche."),
-  ],
+  decorators: ["Particular"],
+  orders: [],
 };
 
 let state = loadState();
@@ -66,7 +62,6 @@ const els = {
   returnCount: document.querySelector("#returnCount"),
   messageDraft: document.querySelector("#messageDraft"),
   copyMessageButton: document.querySelector("#copyMessageButton"),
-  resetDemoButton: document.querySelector("#resetDemoButton"),
   statusFilter: document.querySelector("#statusFilter"),
   upcomingDays: document.querySelector("#upcomingDays"),
   ordersList: document.querySelector("#ordersList"),
@@ -125,39 +120,17 @@ function bindEvents() {
   });
   els.statusFilter.addEventListener("change", renderAgenda);
   els.clearFormButton.addEventListener("click", clearForm);
-  els.resetDemoButton.addEventListener("click", resetDemo);
   els.copyMessageButton.addEventListener("click", copyMessage);
-}
-
-function makeDemoOrder(client, decorator, eventDate, pickupDate, pickupSlot, returnDate, returnSlot, word, totalAmount, depositAmount, pickupPerson, note) {
-  return {
-    id: crypto.randomUUID(),
-    client,
-    decorator,
-    eventDate,
-    pickupDate,
-    pickupSlot,
-    returnDate,
-    returnSlot,
-    word,
-    letters: countLetters(word),
-    totalAmount,
-    depositAmount,
-    pickupPerson,
-    note,
-    status: "active",
-    createdAt: new Date().toISOString(),
-  };
 }
 
 function loadState() {
   const stored = localStorage.getItem(STORAGE_KEY) || LEGACY_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
-  if (!stored) return structuredClone(demoState);
+  if (!stored) return structuredClone(initialState);
 
   try {
     return normalizeState(JSON.parse(stored));
   } catch {
-    return structuredClone(demoState);
+    return structuredClone(initialState);
   }
 }
 
@@ -172,13 +145,15 @@ function normalizeState(raw) {
 
   const settings = { letterUnitPrice: Number(raw.settings?.letterUnitPrice) || inferLegacyUnitPrice(raw.inventory) || 10000 };
   const decorators = raw.decorators?.length ? raw.decorators : ["Particular"];
-  const orders = (raw.orders || []).map((order) => ({
-    ...order,
-    decorator: order.decorator || "Particular",
-    pickupPerson: order.pickupPerson || "",
-    totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), settings),
-    depositAmount: Number(order.depositAmount) || 0,
-  }));
+  const orders = (raw.orders || [])
+    .filter((order) => !isSeedExample(order))
+    .map((order) => ({
+      ...order,
+      decorator: order.decorator || "Particular",
+      pickupPerson: order.pickupPerson || "",
+      totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), settings),
+      depositAmount: Number(order.depositAmount) || 0,
+    }));
 
   return { inventory, settings, decorators, orders };
 }
@@ -434,16 +409,6 @@ function clearForm() {
   renderAvailability();
 }
 
-function resetDemo() {
-  state = structuredClone(demoState);
-  textParts = [];
-  draftLetters = {};
-  selectedAgendaDate = "";
-  persist();
-  renderDecorators();
-  renderAll();
-}
-
 async function copyMessage() {
   await navigator.clipboard.writeText(els.messageDraft.value);
   els.copyMessageButton.textContent = "Copiado";
@@ -503,6 +468,14 @@ function plainPaymentLine(order) {
 function plainDue(order) {
   const due = Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0);
   return due ? `Falta ${formatMoney(due)}` : "Pago completo";
+}
+
+function isSeedExample(order) {
+  return [
+    ["Josefina", "AMBAR", "2026-06-05"],
+    ["Roberto", "RYA", "2026-06-05"],
+    ["Cumple Alma", "ALMA", "2026-06-06"],
+  ].some(([client, word, eventDate]) => order.client === client && order.word === word && order.eventDate === eventDate);
 }
 
 function displayOrderName(order) {
