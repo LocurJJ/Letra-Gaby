@@ -86,12 +86,14 @@ function loadState() {
       inventory,
       settings,
       decorators: raw.decorators?.length ? raw.decorators : ["Particular"],
-      orders: (raw.orders || []).map((order) => ({
-        ...order,
-        decorator: order.decorator || "Particular",
-        totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || {}, settings),
-        depositAmount: Number(order.depositAmount) || 0,
-      })),
+      orders: (raw.orders || [])
+        .filter((order) => !isSeedExample(order))
+        .map((order) => ({
+          ...order,
+          decorator: order.decorator || "Particular",
+          totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || {}, settings),
+          depositAmount: Number(order.depositAmount) || 0,
+        })),
     };
   } catch {
     return { inventory: structuredClone(defaultInventory), settings: { letterUnitPrice: 10000 }, decorators: ["Particular"], orders: [] };
@@ -268,6 +270,14 @@ function countActiveLetters(orders) {
   return orders
     .filter((order) => order.status === "active")
     .reduce((total, order) => total + Object.values(order.letters || {}).reduce((sum, quantity) => sum + quantity, 0), 0);
+}
+
+function isSeedExample(order) {
+  return [
+    ["Josefina", "AMBAR", "2026-06-05"],
+    ["Roberto", "RYA", "2026-06-05"],
+    ["Cumple Alma", "ALMA", "2026-06-06"],
+  ].some(([client, word, eventDate]) => order.client === client && order.word === word && order.eventDate === eventDate);
 }
 
 function percent(value, total) {
