@@ -1,7 +1,24 @@
 const STORAGE_KEY = "letras-gaby-v3";
 const LEGACY_KEYS = ["letras-gaby-v2", "letras-gaby-v1"];
 
-
+const defaultInventory = {
+  A: { stock: 5 },
+  B: { stock: 3 },
+  C: { stock: 2 },
+  G: { stock: 2 },
+  I: { stock: 4 },
+  L: { stock: 4 },
+  M: { stock: 3 },
+  O: { stock: 5 },
+  R: { stock: 3 },
+  S: { stock: 3 },
+  Y: { stock: 1 },
+  "★": { stock: 2 },
+  "✝": { stock: 1 },
+  "♥": { stock: 2 },
+  "*": { stock: 2 },
+  "&": { stock: 1 },
+};
 
 let state = loadState();
 
@@ -49,6 +66,8 @@ function bindEvents() {
   els.priceForm.addEventListener("submit", savePrice);
   els.inventoryForm.addEventListener("submit", saveInventory);
   els.decoratorForm.addEventListener("submit", saveDecorator);
+  window.addEventListener("storage", syncStoredState);
+  window.addEventListener("focus", syncStoredState);
 }
 
 function loadState() {
@@ -86,6 +105,11 @@ function loadState() {
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   LEGACY_KEYS.forEach((key) => localStorage.removeItem(key));
+}
+
+function syncStoredState() {
+  state = loadState();
+  render();
 }
 
 function render() {
@@ -152,7 +176,7 @@ function renderInventory() {
 
 function saveInventory(event) {
   event.preventDefault();
-  const letter = els.inventoryLetter.value.trim().toUpperCase();
+  const letter = normalizeInventoryKey(els.inventoryLetter.value);
   if (!letter) return;
   state.inventory[letter] = {
     stock: Math.max(Number(els.inventoryStock.value) || 0, 0),
@@ -160,6 +184,11 @@ function saveInventory(event) {
   persist();
   els.inventoryForm.reset();
   render();
+}
+
+function normalizeInventoryKey(value) {
+  const key = value.trim();
+  return key.length === 1 ? key.toUpperCase() : key;
 }
 
 function renderDecorators() {
