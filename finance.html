@@ -13,6 +13,7 @@
         <h1>Letras Gaby</h1>
       </div>
       <div class="header-actions">
+        <a class="ghost-link" href="decoradoras.html">Decoradoras</a>
         <a class="ghost-link" href="index.html">Agenda</a>
         <div class="date-chip" id="financeToday"></div>
       </div>
@@ -32,41 +33,16 @@
         </div>
 
         <div class="metric-row finance-metrics">
-          <article class="finance-card">
-            <span id="grossTotal">$0</span>
-            <p>total vendido</p>
-            <div class="metric-track"><div id="grossBar" class="metric-fill"></div></div>
-          </article>
-          <article class="finance-card">
-            <span id="collectedTotal">$0</span>
-            <p>cobrado / señas</p>
-            <div class="metric-track"><div id="collectedBar" class="metric-fill amber"></div></div>
-          </article>
-          <article class="finance-card">
-            <span id="pendingTotal">$0</span>
-            <p>pendiente</p>
-            <div class="metric-track"><div id="pendingBar" class="metric-fill coral"></div></div>
-          </article>
-          <article class="finance-card">
-            <span id="filteredTotal">$0</span>
-            <p>total filtrado</p>
-            <div class="metric-track"><div id="filteredBar" class="metric-fill sky"></div></div>
-          </article>
-          <article class="finance-card">
-            <span id="pendingLetters">0</span>
-            <p>letras pendientes de devolución</p>
-            <div class="metric-track"><div id="pendingLettersBar" class="metric-fill teal"></div></div>
-          </article>
+          <article class="finance-card"><span id="grossTotal">$0</span><p>total vendido</p><div class="metric-track"><div id="grossBar" class="metric-fill"></div></div></article>
+          <article class="finance-card"><span id="collectedTotal">$0</span><p>cobrado / señas</p><div class="metric-track"><div id="collectedBar" class="metric-fill amber"></div></div></article>
+          <article class="finance-card"><span id="pendingTotal">$0</span><p>pendiente</p><div class="metric-track"><div id="pendingBar" class="metric-fill coral"></div></div></article>
+          <article class="finance-card"><span id="filteredTotal">$0</span><p>total filtrado</p><div class="metric-track"><div id="filteredBar" class="metric-fill sky"></div></div></article>
+          <article class="finance-card"><span id="pendingLetters">0</span><p>letras pendientes de devolución</p><div class="metric-track"><div id="pendingLettersBar" class="metric-fill teal"></div></div></article>
         </div>
       </section>
 
       <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Inventario</p>
-            <h2>Letras</h2>
-          </div>
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">Inventario</p><h2>Letras</h2></div></div>
         <form id="priceForm" class="price-form">
           <label>Precio por letra <input id="letterUnitPrice" type="number" min="0" step="500" required /></label>
           <button class="primary-button" type="submit">Guardar precio</button>
@@ -80,12 +56,7 @@
       </section>
 
       <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Clientes</p>
-            <h2>Decoradoras</h2>
-          </div>
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">Clientes</p><h2>Decoradoras</h2></div></div>
         <form id="decoratorForm" class="decorator-form">
           <input id="decoratorName" type="text" placeholder="Nombre de decoradora" required />
           <button class="icon-button" type="submit">+</button>
@@ -94,12 +65,7 @@
       </section>
 
       <section class="panel finance-wide">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Ranking</p>
-            <h2>Top decoradoras</h2>
-          </div>
-        </div>
+        <div class="panel-heading"><div><p class="eyebrow">Ranking</p><h2>Top decoradoras</h2></div></div>
         <div id="decoratorStats" class="orders-list"></div>
       </section>
     </main>
