@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decoradoras - Letras Gaby</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="decoradoras.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Letras afuera</p>
+        <h1>Decoradoras</h1>
+      </div>
+      <div class="header-actions">
+        <a class="ghost-link" href="index.html">Agenda</a>
+        <a class="ghost-link" href="finance.html">Finanzas</a>
+        <div class="date-chip" id="decoratorsToday"></div>
+      </div>
+    </header>
+
+    <main class="decorators-shell">
+      <section class="panel decorators-wide">
+        <div class="panel-heading"><div><p class="eyebrow">Resumen</p><h2>Quién tiene letras</h2></div></div>
+        <div class="metric-row">
+          <article class="metric-card"><span id="activeDecoratorsCount">0</span><p>decoradoras con letras</p></article>
+          <article class="metric-card"><span id="activeOrdersCount">0</span><p>eventos activos</p></article>
+          <article class="metric-card"><span id="activeLettersCount">0</span><p>letras afuera</p></article>
+        </div>
+      </section>
+
+      <section class="panel decorators-wide">
+        <div class="panel-heading"><div><p class="eyebrow">Detalle</p><h2>Decoradoras</h2></div></div>
+        <div id="decoratorsBoard" class="decorators-board"></div>
+      </section>
+    </main>
+
+    <script src="decoradoras.js"></script>
+  </body>
+</html>
