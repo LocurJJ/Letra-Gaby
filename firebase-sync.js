@@ -11,6 +11,7 @@ startSync();
 async function startSync() {
   const localState = readLocalState();
   lastSaved = localState ? JSON.stringify(localState) : "";
+  window.setInterval(syncLocalChanges, 1200);
 
   try {
     const remoteState = await loadRemoteState();
@@ -24,8 +25,6 @@ async function startSync() {
       if (applyingRemote) return;
       applyRemoteState(remoteState);
     }, (error) => console.warn("No se pudo leer Firebase.", error));
-
-    window.setInterval(syncLocalChanges, 1200);
   } catch (error) {
     console.warn("Firebase no esta disponible. La app sigue usando guardado local.", error);
   }
