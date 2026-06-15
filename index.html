@@ -43,50 +43,50 @@
 
           <div class="special-tools">
             <span>Especiales</span>
-            <button type="button" data-special-char="★">★</button>
-            <button type="button" data-special-char="✝">✝</button>
-            <button type="button" data-special-char="♥">♥</button>
+            <button type="button" data-special-char="â˜…">★</button>
+            <button type="button" data-special-char="âœ">✝</button>
+            <button type="button" data-special-char="â™¥">♥</button>
             <button type="button" data-special-char="*">*</button>
             <button type="button" data-special-char="&">&amp;</button>
           </div>
 
           <div class="word-preview" id="orderPreview">
             <strong>Texto</strong>
-            <p>Escribí el texto para armar la reserva.</p>
+            <p>Escrib&iacute; el texto para armar la reserva.</p>
           </div>
 
           <div id="selectedLetters" class="selected-letters"></div>
 
+          <div class="form-grid money-grid">
+            <label>Total autom&aacute;tico <input id="totalAmount" type="number" min="0" step="100" placeholder="0" readonly /></label>
+            <label>Se&ntilde;a <input id="depositAmount" type="number" min="0" step="100" placeholder="0" /></label>
+          </div>
+          <div id="paymentPreview" class="payment-preview">Escrib&iacute; las letras para calcular el total.</div>
+
           <div class="form-grid">
-            <label>Retira <input id="pickupDate" type="date" required /></label>
-            <label>
+            <label class="pickup-field">Retira <input id="pickupDate" type="date" required /></label>
+            <label class="pickup-field">
               Turno
               <select id="pickupSlot">
-                <option value="morning">Mañana</option>
+                <option value="morning">Ma&ntilde;ana</option>
                 <option value="afternoon">Tarde</option>
                 <option value="night">Noche</option>
               </select>
             </label>
-            <label>Devuelve <input id="returnDate" type="date" required /></label>
-            <label>
+            <label class="return-field">Devuelve <input id="returnDate" type="date" required /></label>
+            <label class="return-field">
               Turno
               <select id="returnSlot">
-                <option value="morning">Mañana</option>
+                <option value="morning">Ma&ntilde;ana</option>
                 <option value="afternoon">Tarde</option>
                 <option value="night">Noche</option>
               </select>
             </label>
           </div>
 
-          <label>Quién retira <input id="pickupPerson" type="text" placeholder="Nombre de quien retira" /></label>
-          <div class="form-grid money-grid">
-            <label>Total automático <input id="totalAmount" type="number" min="0" step="100" placeholder="0" readonly /></label>
-            <label>Seña <input id="depositAmount" type="number" min="0" step="100" placeholder="0" /></label>
-          </div>
-          <div id="paymentPreview" class="payment-preview">Debe</div>
-
-          <label>Nota <textarea id="orderNote" rows="3" placeholder="Color, seña, dirección, detalle especial"></textarea></label>
-          <div id="availabilityAlert" class="availability-alert neutral">Escribí el texto para revisar disponibilidad.</div>
+          <label>Qui&eacute;n retira <input id="pickupPerson" type="text" placeholder="Nombre de quien retira" /></label>
+          <label>Nota <textarea id="orderNote" rows="3" placeholder="Color, se&ntilde;a, direcci&oacute;n, detalle especial"></textarea></label>
+          <div id="availabilityAlert" class="availability-alert neutral">Escrib&iacute; el texto para revisar disponibilidad.</div>
           <button class="primary-button" type="submit">Guardar pedido</button>
         </form>
       </section>
@@ -94,24 +94,24 @@
       <section class="panel report-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Vista rápida</p>
-            <h2>Reporte diario</h2>
+            <p class="eyebrow">Vista r&aacute;pida</p>
+            <h2>Retiros y devoluciones</h2>
           </div>
-          <label class="compact-label">Día <input id="reportDate" type="date" /></label>
+          <label class="compact-label">D&iacute;a <input id="reportDate" type="date" /></label>
         </div>
 
         <div class="metric-row">
-          <article class="metric-card is-active" data-report-view="events" tabindex="0">
+          <article class="metric-card is-active" data-report-view="pickups" tabindex="0">
+            <span id="pickupCount">0</span>
+            <p>retiros pendientes</p>
+          </article>
+          <article class="metric-card" data-report-view="events" tabindex="0">
             <span id="eventsCount">0</span>
             <p>eventos pendientes</p>
           </article>
-          <article class="metric-card" data-report-view="pickups" tabindex="0">
-            <span id="pickupCount">0</span>
-            <p>retiros</p>
-          </article>
           <article class="metric-card" data-report-view="returns" tabindex="0">
             <span id="returnCount">0</span>
-            <p>devoluciones</p>
+            <p>devoluciones pendientes</p>
           </article>
         </div>
 
@@ -131,7 +131,7 @@
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Agenda</p>
-            <h2>Próximos eventos</h2>
+            <h2>Pr&oacute;ximos eventos</h2>
           </div>
           <select id="statusFilter">
             <option value="active">Activos</option>
