@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Finanzas - Letras Gaby</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="finance-report.css" />
   </head>
   <body>
     <header class="app-header">
@@ -22,22 +23,37 @@
     <main class="finance-shell">
       <section class="panel finance-wide">
         <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Resumen</p>
-            <h2>Finanzas</h2>
-          </div>
+          <div><p class="eyebrow">Resumen</p><h2>Finanzas</h2></div>
           <div class="date-filter">
             <label>Desde <input id="dateFrom" type="date" /></label>
             <label>Hasta <input id="dateTo" type="date" /></label>
+            <button class="ghost-button" id="dailyDetailButton" type="button">Detalle diario</button>
+            <button class="primary-button" id="exportFinanceButton" type="button">Exportar</button>
           </div>
         </div>
-
         <div class="metric-row finance-metrics">
           <article class="finance-card"><span id="grossTotal">$0</span><p>total vendido</p><div class="metric-track"><div id="grossBar" class="metric-fill"></div></div></article>
           <article class="finance-card"><span id="collectedTotal">$0</span><p>cobrado / señas</p><div class="metric-track"><div id="collectedBar" class="metric-fill amber"></div></div></article>
           <article class="finance-card"><span id="pendingTotal">$0</span><p>pendiente</p><div class="metric-track"><div id="pendingBar" class="metric-fill coral"></div></div></article>
           <article class="finance-card"><span id="filteredTotal">$0</span><p>total filtrado</p><div class="metric-track"><div id="filteredBar" class="metric-fill sky"></div></div></article>
           <article class="finance-card"><span id="pendingLetters">0</span><p>letras pendientes de devolución</p><div class="metric-track"><div id="pendingLettersBar" class="metric-fill teal"></div></div></article>
+        </div>
+      </section>
+
+      <section class="panel finance-wide finance-detail-panel" id="dailyDetailPanel">
+        <div class="panel-heading"><div><p class="eyebrow">Caja</p><h2>Entrada por día</h2></div><strong id="dailyRevenueTotal">$0</strong></div>
+        <div class="finance-detail-grid">
+          <div class="finance-table-wrap">
+            <table class="letters-table finance-table">
+              <thead><tr><th>Día</th><th>Eventos</th><th>Entró</th><th>Vendido</th><th>Pendiente</th></tr></thead>
+              <tbody id="dailyRevenueBody"></tbody>
+            </table>
+          </div>
+          <aside class="finance-insights">
+            <article><span>Más eventos</span><strong id="bestEventsDay">---</strong></article>
+            <article><span>Mejor día</span><strong id="bestRevenueDay">---</strong></article>
+            <article><span>Top letras</span><div id="topLettersList" class="tag-row"></div></article>
+          </aside>
         </div>
       </section>
 
@@ -70,6 +86,8 @@
       </section>
     </main>
 
-    <script src="finance.js"></script>
+    <script type="module" src="finance.js"></script>
+    <script type="module" src="firebase-sync.js"></script>
+    <script src="finance-report.js"></script>
   </body>
 </html>
