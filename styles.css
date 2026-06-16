@@ -107,8 +107,26 @@ button {
   padding: 0 clamp(18px, 4vw, 54px) 36px;
 }
 
+.decorators-shell {
+  display: grid;
+  gap: 18px;
+  padding: 0 clamp(18px, 4vw, 54px) 36px;
+}
+
 .finance-wide {
   grid-column: span 2;
+}
+
+.finance-detail-panel {
+  display: none;
+}
+
+.finance-detail-panel.is-open {
+  display: block;
+}
+
+.decorators-wide {
+  grid-column: 1 / -1;
 }
 
 .panel {
@@ -353,6 +371,18 @@ textarea:focus {
   color: #0d5f55;
 }
 
+.pickup-field input,
+.pickup-field select {
+  border-color: #efc5bd;
+  background: #fff1ee;
+}
+
+.return-field input,
+.return-field select {
+  border-color: #bfd8ee;
+  background: #eef7ff;
+}
+
 .metric-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -466,7 +496,8 @@ textarea:focus {
 .report-list,
 .orders-list,
 .upcoming-days,
-.config-list {
+.config-list,
+.decorators-board {
   display: grid;
   gap: 10px;
 }
@@ -537,12 +568,78 @@ textarea:focus {
   text-transform: uppercase;
 }
 
+.finance-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+}
+
+.finance-table-wrap {
+  overflow-x: auto;
+}
+
+.finance-table td:nth-child(n + 2),
+.finance-table th:nth-child(n + 2) {
+  text-align: right;
+}
+
+.finance-insights {
+  display: grid;
+  gap: 10px;
+}
+
+.finance-insights article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 12px;
+}
+
+.finance-insights span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.finance-insights strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.05rem;
+}
+
 .report-item,
 .order-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--white);
   padding: 13px;
+}
+
+.action-report {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.action-report .order-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.action-report .order-actions button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fffaf1;
+  color: var(--ink);
+  padding: 9px 11px;
+}
+
+.action-report .order-actions button:first-child {
+  background: #edf9f5;
+  color: #0d5f55;
 }
 
 .compact-word {
@@ -610,16 +707,93 @@ textarea:focus {
   background: #edf9f5;
 }
 
+.decorator-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 14px;
+}
+
+.decorator-card-head,
+.decorator-order {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.decorator-card-head strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.decorator-card-head p,
+.decorator-order p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.decorator-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.decorator-totals span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #edf9f5;
+  color: #0d5f55;
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 8px 10px;
+}
+
+.decorator-orders {
+  display: grid;
+  gap: 8px;
+}
+
+.decorator-order {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.decorator-order button {
+  border: 0;
+  background: transparent;
+  color: var(--coral);
+  font-weight: 900;
+}
+
 @media (max-width: 920px) {
   .app-header,
   .panel-heading,
-  .order-top {
+  .order-top,
+  .decorator-card-head,
+  .decorator-order {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .report-panel {
+    order: 1;
+  }
+
+  .planner-panel {
+    order: 2;
+  }
+
+  .orders-panel {
+    order: 3;
   }
 
   .finance-shell {
@@ -642,10 +816,23 @@ textarea:focus {
   .form-grid,
   .metric-row,
   .finance-metrics,
+  .finance-detail-grid,
   .inventory-config-form,
   .config-row,
   .date-filter {
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .action-report {
+    grid-template-columns: 1fr;
+  }
+
+  .action-report .order-actions {
+    justify-content: stretch;
+  }
+
+  .action-report .order-actions button {
+    flex: 1 1 140px;
   }
 }
