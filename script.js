@@ -32,7 +32,7 @@ const initialState = {
 let state = loadState();
 let textParts = [];
 let draftLetters = {};
-let reportView = "events";
+let reportView = "pickups";
 let selectedAgendaDate = "";
 
 const els = {
@@ -121,6 +121,8 @@ function bindEvents() {
   els.statusFilter.addEventListener("change", renderAgenda);
   els.clearFormButton.addEventListener("click", clearForm);
   els.copyMessageButton.addEventListener("click", copyMessage);
+  window.addEventListener("storage", syncStoredState);
+  window.addEventListener("focus", syncStoredState);
 }
 
 function loadState() {
@@ -153,6 +155,8 @@ function normalizeState(raw) {
       pickupPerson: order.pickupPerson || "",
       totalAmount: Number(order.totalAmount) || estimatePrice(order.letters || countLetters(order.word || ""), settings),
       depositAmount: Number(order.depositAmount) || 0,
+      pickupConfirmed: Boolean(order.pickupConfirmed),
+      returnConfirmed: Boolean(order.returnConfirmed || order.status === "completed"),
     }));
 
   return { inventory, settings, decorators, orders };
@@ -161,6 +165,12 @@ function normalizeState(raw) {
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   LEGACY_KEYS.forEach((key) => localStorage.removeItem(key));
+}
+
+function syncStoredState() {
+  state = loadState();
+  renderDecorators();
+  renderAll();
 }
 
 function renderAll() {
@@ -250,6 +260,8 @@ function saveOrder(event) {
     depositAmount: moneyValue(els.depositAmount.value),
     note: els.orderNote.value.trim(),
     status: "active",
+    pickupConfirmed: false,
+    returnConfirmed: false,
     createdAt: new Date().toISOString(),
   };
   state.orders.push(order);
@@ -319,22 +331,46 @@ function setReportView(view) {
 function renderReport() {
   const date = els.reportDate.value;
   const active = state.orders.filter((order) => order.status === "active");
-  const events = active.filter((order) => order.eventDate === date);
-  const pickups = active.filter((order) => order.pickupDate === date);
-  const returns = active.filter((order) => order.returnDate === date);
-  const pending = active.filter((order) => order.eventDate >= todayValue()).length;
+  const events = active.filter((order) => order.eventDate >= todayValue()).sort(sortByEvent);
+  const dayEvents = active.filter((order) => order.eventDate === date);
+  const dayPickups = active.filter((order) => order.pickupDate === date && !order.pickupConfirmed);
+  const dayReturns = active.filter((order) => order.returnDate === date && !order.returnConfirmed);
+  const pickups = active.filter((order) => !order.pickupConfirmed).sort((a, b) => stamp(a.pickupDate, a.pickupSlot) - stamp(b.pickupDate, b.pickupSlot));
+  const returns = active.filter((order) => !order.returnConfirmed).sort((a, b) => stamp(a.returnDate, a.returnSlot) - stamp(b.returnDate, b.returnSlot));
   const lists = { events, pickups, returns };
   const labels = { events: "eventos", pickups: "retiros", returns: "devoluciones" };
-  els.eventsCount.textContent = pending;
+  els.eventsCount.textContent = events.length;
   els.pickupCount.textContent = pickups.length;
   els.returnCount.textContent = returns.length;
-  els.daySummary.innerHTML = events.length ? `<div class="summary-title"><strong>Letras ${shortWeekday(date)}</strong><span>${events.length} evento(s)</span></div>${lettersTable(totalLetters(events))}` : `<p class="empty-state">Ese día no tiene eventos cargados.</p>`;
-  els.dailyReport.innerHTML = lists[reportView].length ? lists[reportView].map(reportCard).join("") : `<p class="empty-state">No hay ${labels[reportView]} para ${longDate(date)}.</p>`;
-  els.messageDraft.value = buildMessage(date, events, pickups, returns);
+  const currentList = lists[reportView];
+  els.daySummary.innerHTML = dayEvents.length ? `<div class="summary-title"><strong>Letras ${shortWeekday(date)}</strong><span>${dayEvents.length} evento(s)</span></div>${lettersTable(totalLetters(dayEvents))}` : `<p class="empty-state">Ese dia no tiene eventos cargados.</p>`;
+  els.dailyReport.innerHTML = currentList.length ? currentList.map((order) => reportActionCard(order, reportView)).join("") : `<p class="empty-state">No hay ${labels[reportView]} pendientes.</p>`;
+  bindReportActions();
+  els.messageDraft.value = buildMessage(date, dayEvents, dayPickups, dayReturns);
 }
 
-function reportCard(order) {
-  return `<article class="report-item"><strong>${escapeHtml(displayOrderName(order))}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>${paymentLine(order)}</p></article>`;
+function reportActionCard(order, view) {
+  const due = dueAmount(order);
+  const completeButton = due ? `<button type="button" data-complete-payment="${order.id}">Completar pago</button>` : "";
+  const action =
+    view === "pickups"
+      ? `<button type="button" data-confirm-pickup="${order.id}">Confirmar retiro</button>${completeButton}`
+      : view === "returns"
+        ? `<button type="button" data-confirm-return="${order.id}">Confirmar devolucion</button>${completeButton}`
+        : completeButton;
+  const dateLine =
+    view === "pickups"
+      ? `Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}`
+      : view === "returns"
+        ? `Devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}`
+        : `Evento ${shortDate(order.eventDate)}`;
+  return `<article class="report-item action-report"><div><strong>${escapeHtml(displayOrderName(order))}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>${dateLine} - Retira: ${escapeHtml(order.pickupPerson || "sin cargar")}</p><p>${paymentLine(order)}</p></div>${action ? `<div class="order-actions">${action}</div>` : ""}</article>`;
+}
+
+function bindReportActions() {
+  els.dailyReport.querySelectorAll("[data-confirm-pickup]").forEach((button) => button.addEventListener("click", () => confirmPickup(button.dataset.confirmPickup)));
+  els.dailyReport.querySelectorAll("[data-confirm-return]").forEach((button) => button.addEventListener("click", () => confirmReturn(button.dataset.confirmReturn)));
+  els.dailyReport.querySelectorAll("[data-complete-payment]").forEach((button) => button.addEventListener("click", () => completePayment(button.dataset.completePayment)));
 }
 
 function buildMessage(date, events, pickups, returns) {
@@ -381,11 +417,29 @@ function renderAgenda() {
 
 function orderCard(order) {
   const active = order.status === "active";
-  return `<article class="order-card"><div class="order-top"><div><strong>${escapeHtml(displayOrderName(order))}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>Retira: ${escapeHtml(order.pickupPerson || "sin cargar")}</p><p>${paymentLine(order)}</p></div><div class="order-actions">${active ? `<button type="button" data-done="${order.id}">Finalizar</button>` : `<button type="button" data-active="${order.id}">Activar</button>`}<button type="button" data-delete="${order.id}">Borrar</button></div></div><p>Evento ${shortDate(order.eventDate)}. Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}, devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}.</p>${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}<div class="tag-row"><span class="tag event">${active ? "Activo" : "Finalizado"}</span><span class="tag">${paymentStatus(order)}</span></div></article>`;
+  return `<article class="order-card"><div class="order-top"><div><strong>${escapeHtml(displayOrderName(order))}</strong><p class="compact-word">${escapeHtml(order.word)}</p><p>${lettersText(order.letters)}</p><p>Retira: ${escapeHtml(order.pickupPerson || "sin cargar")}</p><p>${paymentLine(order)}</p></div><div class="order-actions">${active ? `<button type="button" data-done="${order.id}">Devolvió</button>` : `<button type="button" data-active="${order.id}">Activar</button>`}<button type="button" data-delete="${order.id}">Borrar</button></div></div><p>Evento ${shortDate(order.eventDate)}. Retira ${shortDate(order.pickupDate)} ${slotLabels[order.pickupSlot]}, devuelve ${shortDate(order.returnDate)} ${slotLabels[order.returnSlot]}.</p>${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}<div class="tag-row"><span class="tag event">${active ? "Activo" : "Finalizado"}</span><span class="tag">${paymentStatus(order)}</span></div></article>`;
 }
 
 function updateStatus(id, status) {
-  state.orders = state.orders.map((order) => (order.id === id ? { ...order, status } : order));
+  state.orders = state.orders.map((order) => (order.id === id ? { ...order, status, returnConfirmed: status === "completed" ? true : order.returnConfirmed } : order));
+  persist();
+  renderAll();
+}
+
+function confirmPickup(id) {
+  state.orders = state.orders.map((order) => (order.id === id ? { ...order, pickupConfirmed: true, pickupConfirmedAt: new Date().toISOString() } : order));
+  persist();
+  renderAll();
+}
+
+function confirmReturn(id) {
+  state.orders = state.orders.map((order) => (order.id === id ? { ...order, returnConfirmed: true, status: "completed", returnConfirmedAt: new Date().toISOString() } : order));
+  persist();
+  renderAll();
+}
+
+function completePayment(id) {
+  state.orders = state.orders.map((order) => (order.id === id ? { ...order, depositAmount: order.totalAmount || 0, paymentCompletedAt: new Date().toISOString() } : order));
   persist();
   renderAll();
 }
@@ -454,7 +508,7 @@ function lettersTable(letters) {
 }
 
 function paymentStatus(order) {
-  return (order.totalAmount || 0) - (order.depositAmount || 0) <= 0 ? "Pago" : "Falta";
+  return dueAmount(order) <= 0 ? "Pago" : "Falta";
 }
 
 function paymentLine(order) {
@@ -466,8 +520,16 @@ function plainPaymentLine(order) {
 }
 
 function plainDue(order) {
-  const due = Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0);
+  const due = dueAmount(order);
   return due ? `Falta ${formatMoney(due)}` : "Pago completo";
+}
+
+function dueAmount(order) {
+  return Math.max((order.totalAmount || 0) - (order.depositAmount || 0), 0);
+}
+
+function sortByEvent(a, b) {
+  return a.eventDate.localeCompare(b.eventDate) || a.word.localeCompare(b.word);
 }
 
 function isSeedExample(order) {
