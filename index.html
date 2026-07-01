@@ -20,7 +20,7 @@
     </header>
 
     <main class="app-shell">
-      <section class="panel planner-panel">
+      <section class="panel planner-panel" id="reserva">
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Nuevo pedido</p>
@@ -91,7 +91,7 @@
         </form>
       </section>
 
-      <section class="panel report-panel">
+      <section class="panel report-panel" id="inicio">
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Vista r&aacute;pida</p>
@@ -127,7 +127,7 @@
         </div>
       </section>
 
-      <section class="panel orders-panel">
+      <section class="panel orders-panel" id="agenda">
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Agenda</p>
@@ -143,6 +143,14 @@
         <div id="ordersList" class="orders-list"></div>
       </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="Navegacion principal">
+      <a class="is-active" href="#inicio"><span>Inicio</span></a>
+      <a href="#reserva"><span>Reservar</span></a>
+      <a href="#agenda"><span>Agenda</span></a>
+      <a href="decoradoras.html"><span>Decos</span></a>
+      <a href="finance.html"><span>Finanzas</span></a>
+    </nav>
 
     <script type="module" src="script.js"></script>
     <script type="module" src="firebase-sync.js"></script>
