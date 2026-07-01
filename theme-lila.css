@@ -1,0 +1,150 @@
+:root {
+  --bg: #f7f1fb;
+  --surface: #fff9ff;
+  --white: #ffffff;
+  --ink: #26202b;
+  --muted: #74677d;
+  --line: #e7d8ec;
+  --mp-yellow: #e8c6ff;
+  --mp-blue: #7d4ab8;
+  --mp-soft-blue: #f3e7fb;
+  --teal: #8a55bd;
+  --amber: #c9a24d;
+  --sky: #9c78c8;
+  --coral: #d86e89;
+  --shadow: 0 20px 55px rgba(86, 47, 112, 0.13);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(255, 249, 255, 0.96), rgba(247, 241, 251, 0.94)),
+    repeating-linear-gradient(90deg, rgba(138, 85, 189, 0.06) 0 1px, transparent 1px 96px);
+}
+
+.eyebrow,
+.app-header .eyebrow {
+  color: #6e3b9f;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(138, 85, 189, 0.16);
+}
+
+.metric-track,
+.letters-table th {
+  background: #efe5f5;
+}
+
+.availability-alert.good,
+.payment-preview.paid,
+.metric-card:hover,
+.metric-card.is-active,
+.metric-card:focus-visible,
+.day-button:hover,
+.day-button.is-active,
+.tag,
+.decorator-totals span {
+  background: #f3e7fb;
+  color: #5b2d86;
+}
+
+.availability-alert.bad,
+.order-actions button[data-delete] {
+  background: #fff0f4;
+}
+
+.pickup-field input,
+.pickup-field select {
+  border-color: #eac7d3;
+  background: #fff0f4;
+}
+
+.return-field input,
+.return-field select {
+  border-color: #d8c6ef;
+  background: #f4eaff;
+}
+
+@media (max-width: 720px) {
+  body {
+    background: #faf5ff;
+  }
+
+  .app-header {
+    background: var(--mp-yellow);
+    box-shadow: 0 16px 32px rgba(86, 47, 112, 0.16);
+  }
+
+  .ghost-link,
+  .date-chip {
+    color: #2e2435;
+    box-shadow: 0 6px 18px rgba(86, 47, 112, 0.14);
+  }
+
+  .panel,
+  .word-preview,
+  .day-summary,
+  .agenda-day-detail,
+  .report-item,
+  .order-card,
+  .decorator-card,
+  .finance-insights article {
+    box-shadow: 0 10px 28px rgba(86, 47, 112, 0.1);
+  }
+
+  .metric-card {
+    background: var(--mp-soft-blue);
+  }
+
+  .metric-card:nth-child(2) {
+    background: #fff3d9;
+  }
+
+  .metric-card:nth-child(3) {
+    background: #f4eaff;
+  }
+
+  .metric-card:hover,
+  .metric-card.is-active,
+  .metric-card:focus-visible {
+    background: #ead8f8;
+    box-shadow: inset 0 0 0 2px rgba(125, 74, 184, 0.26);
+  }
+
+  .metric-card span {
+    color: #2d1e38;
+  }
+
+  input,
+  select,
+  textarea {
+    background: #fffbff;
+  }
+
+  .primary-button,
+  .bottom-nav a.is-active {
+    background: var(--mp-blue);
+  }
+
+  .order-actions button,
+  .action-report .order-actions button {
+    background: var(--mp-soft-blue);
+    color: var(--mp-blue);
+  }
+
+  .day-button {
+    box-shadow: 0 10px 22px rgba(86, 47, 112, 0.1);
+  }
+
+  .bottom-nav {
+    border-color: rgba(231, 216, 236, 0.9);
+    box-shadow: 0 18px 36px rgba(86, 47, 112, 0.2);
+  }
+
+  .bottom-nav a {
+    color: #74677d;
+  }
+}
