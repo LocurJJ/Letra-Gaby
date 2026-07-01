@@ -1,7 +1,7 @@
 :root {
-  --mp-yellow: #ffe600;
-  --mp-blue: #3f6df6;
-  --mp-soft-blue: #eef3ff;
+  --mp-yellow: #f4efe3;      /* Fondo crema */
+  --mp-blue: #0b6b57;        /* Verde principal */
+  --mp-soft-blue: #edf6f2;   /* Verde muy claro */
 }
 
 .bottom-nav {
